@@ -39,25 +39,27 @@ selected_date = st.sidebar.date_input("Select data date", value=pd.Timestamp.now
 selected_data_type = st.sidebar.selectbox("Select data type", ["stocks", "etfs"])
 selected_data_period = st.sidebar.selectbox('Days to expiration', ['min', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,365])
 
+#定义两个回调函数，用于处理st.session['ticker_selected']
+def ticker_select():
+    st.session_state['ticker_selected'] = st.session_state.ticker_sel
+
+def ticker_init():
+    st.session_state['ticker_selected'] = st.session_state.ticker_init
 
 # Get data based on user input
 option_change = None
 
 try:
     option_change = get_data(selected_date.strftime("%m-%d-%Y"), selected_data_type, selected_data_period)
-    #Ticker selected
+
+    # Ticker selected
     ticker_options = option_change['Symbol'].unique().tolist()
-    if 'ticker_selected' not in st.session_state:
-        ticker_selected = st.sidebar.selectbox('Ticker', options=ticker_options)
-        st.session_state['ticker_selected'] = ticker_selected
+    if 'ticker_selected' not in st.session_state or st.session_state['ticker_selected'] not in ticker_options:
+        ticker_selected = st.sidebar.selectbox('Ticker', options=ticker_options,key='ticker_init',on_change=ticker_init)
+        
+    elif 'ticker_selected' in st.session_state and st.session_state['ticker_selected'] in ticker_options:
+        ticker_selected = st.sidebar.selectbox('Ticker', options=ticker_options,key='ticker_sel',on_change = ticker_select, index=ticker_options.index(st.session_state['ticker_selected']))
 
-    elif st.session_state['ticker_selected'] not in option_change['Symbol'].unique():
-        ticker_selected = st.sidebar.selectbox('Ticker', options=ticker_options)
-        st.session_state['ticker_selected'] = ticker_selected
-
-    else:
-        ticker_selected = st.sidebar.selectbox('Ticker', options=ticker_options, index=ticker_options.index(st.session_state['ticker_selected']))
-        st.session_state['ticker_selected'] = ticker_selected
 
     tz = pytz.timezone('US/Eastern')
     last_update_time = datetime.fromtimestamp(os.path.getmtime(os.path.join(os.path.dirname(__file__),f"../Data/Increase/stocks-increase-change-in-open-interest-{selected_date.strftime('%m-%d-%Y')}.csv")), tz).strftime("%Y-%m-%d %H:%M:%S %Z")
