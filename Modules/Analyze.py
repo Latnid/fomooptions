@@ -4,11 +4,13 @@ import pytz
 import pandas as pd
 import streamlit as st
 import holoviews as hv
+import hvplot.pandas
 from CleanData import get_data
+from DataBase import *
 
 # Set page configuration
 st.set_page_config(
-    page_title="Daily options flow|Options fLow analyze|FOMOSTOP",
+    page_title="FOMOSTOP FlowMaster: Unleashing Advanced Options Flow Analysis",
     page_icon="random",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -37,7 +39,7 @@ st.sidebar.write("A daily analysis of options flow.")
 st.sidebar.title("Choose data parameters")
 selected_date = st.sidebar.date_input("Select data date", value=pd.Timestamp.now(tz=pytz.timezone('US/Eastern')).date())
 selected_data_type = st.sidebar.selectbox("Select data type", ["stocks", "etfs"])
-selected_data_period = st.sidebar.selectbox('Days to expiration', ['min', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,365])
+selected_data_period = st.sidebar.selectbox('Days to expiration', ['min', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 30, 60, 'max'])
 
 #定义两个回调函数，用于处理st.session['ticker_selected']
 def ticker_select():
@@ -50,7 +52,9 @@ def ticker_init():
 option_change = None
 
 try:
-    option_change = get_data(selected_date.strftime("%m-%d-%Y"), selected_data_type, selected_data_period)
+    con,cur = connect_data_base()
+    option_change,last_update_time = database_rw(operation = 'read', con = con, cur = cur, date = selected_date.strftime("%m-%d-%Y"), types = selected_data_type, DTE = selected_data_period)
+    #option_change = get_data(selected_date.strftime("%m-%d-%Y"), selected_data_type, selected_data_period)
 
     # Ticker selected
     ticker_options = option_change['Symbol'].unique().tolist()
@@ -60,9 +64,9 @@ try:
     elif 'ticker_selected' in st.session_state and st.session_state['ticker_selected'] in ticker_options:
         ticker_selected = st.sidebar.selectbox('Ticker', options=ticker_options,key='ticker_sel',on_change = ticker_select, index=ticker_options.index(st.session_state['ticker_selected']))
 
-
-    tz = pytz.timezone('US/Eastern')
-    last_update_time = datetime.fromtimestamp(os.path.getmtime(os.path.join(os.path.dirname(__file__),f"../Data/Increase/stocks-increase-change-in-open-interest-{selected_date.strftime('%m-%d-%Y')}.csv")), tz).strftime("%Y-%m-%d %H:%M:%S %Z")
+    #从csv文件模式获取修改时间
+    #tz = pytz.timezone('US/Eastern')
+    #last_update_time = datetime.fromtimestamp(os.path.getmtime(os.path.join(os.path.dirname(__file__),f"../Data/Increase/stocks-increase-change-in-open-interest-{selected_date.strftime('%m-%d-%Y')}.csv")), tz).strftime("%Y-%m-%d %H:%M:%S %Z")
     st.sidebar.write(f"Last update: {last_update_time}")
 
 
@@ -120,7 +124,8 @@ if option_change is not None:
         
         
 
-    )# Top 20 Open Interest change
+    )
+    # Top 20 Open Interest change
     plot_top20OI_chg = option_change_required_top_20.hvplot.bar(
         y="OI Chg",
         by="Type",

@@ -2,7 +2,6 @@
 import os
 import pandas as pd
 from pathlib import Path
-import hvplot.pandas
 import pandas as pd
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -29,10 +28,12 @@ def get_data(date,types,DTE):
         
         #Select the DTE
         if DTE == 'min':
-            combine_min_DTE = combine_df[combine_df['DTE'] == increase['DTE'].min()]
+            combine_min_DTE = combine_df[combine_df['DTE'] == combine_df['DTE'].min()]
+        elif DTE == 'max':
+            combine_min_DTE = combine_df[combine_df['DTE'] <= combine_df['DTE'].max()]
         else:
             combine_min_DTE = combine_df[combine_df['DTE'] <= DTE]
-        
+
         #Clean the NA data
         combine_min_DTE = combine_min_DTE.dropna()
         

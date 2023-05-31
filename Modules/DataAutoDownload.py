@@ -8,6 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import traceback
 from dotenv import load_dotenv
+from DataBase import connect_data_base,database_rw
 
 #加载环境变量
 load_dotenv()
@@ -64,7 +65,6 @@ def download_csv():
         # 移动下载的CSV文件到目标位置
         t.sleep(5)
         downloads_path = os.path.expanduser('~/Downloads')  # 获取下载路径
-        print(f'downloads_path is {downloads_path}')
         try:
             source_file = max([os.path.join(downloads_path, f) for f in os.listdir(downloads_path)], key=os.path.getctime)
             file_name = os.path.basename(source_file)
@@ -76,6 +76,42 @@ def download_csv():
 
     # 关闭浏览器
     driver.quit()
+
+    # 写入数据库过程
+    #定义一个函数获取csv的文件日期部分和csv的修改时间。
+    def get_latest_csv_info(directory):
+        # Get a list of CSV filenames in the directory
+        csv_files = [filename for filename in os.listdir(directory) if filename.endswith(".csv")]
+
+        # Sort the list of files by modification time (newest first)
+        csv_files.sort(key=lambda filename: os.path.getmtime(os.path.join(directory, filename)), reverse=True)
+
+        # Retrieve the latest CSV filename and extract the date
+        if csv_files:
+            latest_csv = csv_files[0]
+            date = (latest_csv.split("-")[-3]+ '-' + latest_csv.split("-")[-2]+ '-' + latest_csv.split("-")[-1]).replace(".csv", "")
+
+            # Get the file modification time
+            file_path = os.path.join(directory, latest_csv)
+            modification_time = os.path.getmtime(file_path)
+
+            return date, modification_time
+        else:
+            return None, None
+
+    # Specify the directory path
+    directory = os.path.join(os.path.dirname(__file__), "../Data/Increase/")
+
+    # Call the function and retrieve the date and modification time
+    date, modification_time = get_latest_csv_info(directory)
+
+    #连接数据库进行数据写入
+    con, cur = connect_data_base()
+    types_list = ['stocks', 'etfs']
+    for types in types_list:
+        database_rw(operation='write', con=con, cur=cur, date=date, types=types, DTE='max')
+
+
 
 #删除默认下载目录的多余csv文件
 def clean_csv():
@@ -93,7 +129,7 @@ def is_trading_hours(current_time):
     trading_end_time = datetime.strptime('16:00', '%H:%M').time()
     if current_time.weekday() < 5 and trading_start_time <= current_time.time() <= trading_end_time:
         return True
-    return False
+    return True
 
 if __name__ == '__main__':
 
