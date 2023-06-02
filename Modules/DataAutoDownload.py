@@ -109,7 +109,7 @@ def download_csv():
     con, cur = connect_data_base()
     types_list = ['stocks', 'etfs']
     for types in types_list:
-        database_rw(operation='write', con=con, cur=cur, date=date, types=types, DTE='max')
+        database_rw(operation='write', con=con, cur=cur, date=date, csv_time = modification_time, types=types, DTE='max')
 
 
 
@@ -129,7 +129,7 @@ def is_trading_hours(current_time):
     trading_end_time = datetime.strptime('16:00', '%H:%M').time()
     if current_time.weekday() < 5 and trading_start_time <= current_time.time() <= trading_end_time:
         return True
-    return True
+    return False
 
 if __name__ == '__main__':
 

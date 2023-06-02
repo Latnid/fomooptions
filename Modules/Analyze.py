@@ -41,6 +41,28 @@ selected_date = st.sidebar.date_input("Select data date", value=pd.Timestamp.now
 selected_data_type = st.sidebar.selectbox("Select data type", ["stocks", "etfs"])
 selected_data_period = st.sidebar.selectbox('Days to expiration', ['min', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 30, 60, 'max'])
 
+#连接数据库，获取所选日期所有表格的Timestamp列表
+con,cur = connect_data_base()
+_,_,table_timestamps = database_rw(operation = 'read', con = con, cur = cur, date = selected_date.strftime("%m-%d-%Y"), types = selected_data_type, DTE = selected_data_period)
+
+#Convert timestamps to human-readable format
+eastern_tz = pytz.timezone('US/Eastern')
+formatted_table_timestamps = [datetime.fromtimestamp(int(timestamp), tz=eastern_tz).strftime("%Y-%m-%d %H:%M:%S %Z") for timestamp in table_timestamps]
+
+#定义两个回调函数，用于处理st.session['time_selected']
+def time_select():
+    st.session_state['time_selected'] = st.session_state.time_select
+
+def time_init():
+    st.session_state['time_selected'] = st.session_state.time_init
+
+if 'time_selected' not in st.session_state or st.session_state['time_selected'] not in table_timestamps:
+    time_selected_formatted = st.sidebar.selectbox('Data time', options=formatted_table_timestamps, key='time_init', on_change=time_init)
+else:
+    time_selected_formatted = st.sidebar.selectbox('Data time', options=formatted_table_timestamps, key='time_select', on_change=time_select, index=formatted_table_timestamps.index(st.session_state['time_selected']))
+
+time_selected = table_timestamps[formatted_table_timestamps.index(time_selected_formatted)]
+
 #定义两个回调函数，用于处理st.session['ticker_selected']
 def ticker_select():
     st.session_state['ticker_selected'] = st.session_state.ticker_sel
@@ -48,12 +70,15 @@ def ticker_select():
 def ticker_init():
     st.session_state['ticker_selected'] = st.session_state.ticker_init
 
+
+
 # Get data based on user input
 option_change = None
 
 try:
+
     con,cur = connect_data_base()
-    option_change,last_update_time = database_rw(operation = 'read', con = con, cur = cur, date = selected_date.strftime("%m-%d-%Y"), types = selected_data_type, DTE = selected_data_period)
+    option_change,last_update_time,_ = database_rw(operation = 'read', con = con, cur = cur, date = selected_date.strftime("%m-%d-%Y"), types = selected_data_type, DTE = selected_data_period ,time = time_selected)
     #option_change = get_data(selected_date.strftime("%m-%d-%Y"), selected_data_type, selected_data_period)
 
     # Ticker selected
@@ -64,13 +89,14 @@ try:
     elif 'ticker_selected' in st.session_state and st.session_state['ticker_selected'] in ticker_options:
         ticker_selected = st.sidebar.selectbox('Ticker', options=ticker_options,key='ticker_sel',on_change = ticker_select, index=ticker_options.index(st.session_state['ticker_selected']))
 
+
     #从csv文件模式获取修改时间
     #tz = pytz.timezone('US/Eastern')
     #last_update_time = datetime.fromtimestamp(os.path.getmtime(os.path.join(os.path.dirname(__file__),f"../Data/Increase/stocks-increase-change-in-open-interest-{selected_date.strftime('%m-%d-%Y')}.csv")), tz).strftime("%Y-%m-%d %H:%M:%S %Z")
     st.sidebar.write(f"Last update: {last_update_time}")
 
 
-except FileNotFoundError:
+except Exception:
     # Display a streamlit animation to notify the user that data is still being prepared
     st.warning("Data will be updated during market hours, see you later.")
     st.snow()
