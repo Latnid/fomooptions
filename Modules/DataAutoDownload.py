@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import traceback
 from dotenv import load_dotenv
-from DataBase import connect_data_base,database_rw
+from DataBase import database_rw
 
 #加载环境变量
 load_dotenv()
@@ -93,11 +93,11 @@ def write_data_to_database(directory):
         print("No CSV files found in the directory.")
         return
 
-    con, cur = connect_data_base()
+    
     types_list = ['stocks', 'etfs']
 
     for types in types_list:
-        database_rw(operation='write', con=con, cur=cur, date=date, csv_time=modification_time, types=types, DTE='max')
+        database_rw(operation='write', date=date, csv_time=modification_time, types=types, DTE='max')
 
 
 
@@ -116,7 +116,7 @@ def is_trading_hours(current_time):
     trading_start_time = datetime.strptime('9:30', '%H:%M').time()
     trading_end_time = datetime.strptime('16:00', '%H:%M').time()
     if current_time.weekday() < 5 and trading_start_time <= current_time.time() <= trading_end_time:
-        return False
+        return True
     return False
 
 if __name__ == '__main__':
@@ -134,7 +134,7 @@ if __name__ == '__main__':
                 write_data_to_database(directory = os.path.join(os.path.dirname(__file__), "../Data/Increase/"))
                 print("Repeat in one hour.")
                 # 倒计时1小时
-                for i in range(20*60, 0, -1):
+                for i in range(60*60, 0, -1):
                     mins, secs = divmod(i, 60)
                     time_format = f"{mins:02d}:{secs:02d}"
                     print(f"Next download in {time_format}...", end="\r")

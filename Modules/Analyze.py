@@ -44,9 +44,13 @@ selected_data_period = st.sidebar.selectbox('Days to expiration', ['min', 1, 2, 
 table_timestamps = None
 try:
     #连接数据库，获取所选日期所有表格的Timestamp列表
-    con,cur = connect_data_base()
-    _,_,table_timestamps = database_rw(operation = 'read', con = con, cur = cur, date = selected_date.strftime("%m-%d-%Y"), types = selected_data_type, DTE = selected_data_period)
-except Exception:
+    _,_,table_timestamps = database_rw(operation = 'read', date = selected_date.strftime("%m-%d-%Y"), types = selected_data_type, DTE = selected_data_period)
+
+except Exception as e:
+    # 发生异常时记录错误信息
+    error_message = traceback.format_exc()
+    with open("Analyze_error_log.txt", "a") as file:
+        file.write(f"Error in database_rw function:\n{error_message}\n")
     # Display a streamlit animation to notify the user that data is still being prepared
     st.warning("Data will be updated during market hours, see you later.")
     st.snow()
@@ -77,10 +81,8 @@ if table_timestamps is not None:
     def ticker_init():
         st.session_state['ticker_selected'] = st.session_state.ticker_init
 
-
-    con,cur = connect_data_base()
-    option_change,last_update_time,_ = database_rw(operation = 'read', con = con, cur = cur, date = selected_date.strftime("%m-%d-%Y"), types = selected_data_type, DTE = selected_data_period ,time = time_selected)
-    #option_change = get_data(selected_date.strftime("%m-%d-%Y"), selected_data_type, selected_data_period)
+    #读取数据库数据：
+    option_change,last_update_time,_ = database_rw(operation = 'read', date = selected_date.strftime("%m-%d-%Y"), types = selected_data_type, DTE = selected_data_period ,time = time_selected)
 
     # Ticker selected
     ticker_options = option_change['Symbol'].unique().tolist()
@@ -101,7 +103,7 @@ if table_timestamps is not None:
 
 
     # Create DataFrame for all the required columns
-    option_change_required = option_change[["Symbol", "Type", "Strike", "DTE", "Open Int", "OI Chg", "Volume", "Price", "IV"]]
+    option_change_required = option_change[["Symbol", "Type", "Strike", "DTE", "Open Int", "OI Chg", "Volume", "Price", "IV", "Time"]]
 
     # Sorting step one
     # Groupby Symbol, then calculate the total Open Int, and make it as a new column
@@ -128,7 +130,7 @@ if table_timestamps is not None:
     )
     
     #Title of the charts
-    chart_title = '                                                            options.fomostop.com'
+    chart_title = '                options.fomostop.com'
     # Top 20 symbols ranked by total open interest，Call / Put Open Interest comparation
     
     plot_top20OI = option_change_required_top_20.hvplot.bar(
@@ -141,10 +143,10 @@ if table_timestamps is not None:
         by="Type",
         hue=["Call","Put"], 
         color=['#FF5635', '#0AA638'], 
-        hover_cols=["Strike", "DTE"],
+        hover_cols=["Strike", "DTE", "Time"],
         rot=90,
         yformatter="%0f",
-        title=f"Total Open Interest(Call+Put) Top 20 {chart_title}",
+        title=f"Total Open Interest(Call+Put) Top 20 - Updated:{last_update_time} {chart_title}",
         
         
 
@@ -160,10 +162,10 @@ if table_timestamps is not None:
         width=900,
         yformatter="%0f",
         rot=90,
-        hover_cols=["Strike", "DTE"],
+        hover_cols=["Strike", "DTE", "Time"],
         xlabel="Tickers by Call and Put",
         ylabel="Open Interest Change",
-        title= f"Tickers Call / Put Open Interests Change comparation {chart_title}",
+        title= f"Tickers Call / Put Open Interests Change comparation - Updated:{last_update_time} {chart_title}",
     )
 
 
@@ -174,8 +176,8 @@ if table_timestamps is not None:
         color=['#0AA638','#FF5635'],
         x = 'Strike',
         y = 'Open Int',
-        title = f'Open Int base on strike price - {ticker_selected} {chart_title}',
-        hover_cols = ['Strike','DTE'],
+        title = f'Open Int base on strike price - {ticker_selected} - Updated:{last_update_time} {chart_title}',
+        hover_cols = ['Strike','DTE','Time'],
         height=280,
         width=900, 
         rot = 90,
@@ -193,10 +195,10 @@ if table_timestamps is not None:
         width=900, 
         yformatter='%0f',
         rot=90,
-        hover_cols = ['Strike','DTE'],
+        hover_cols = ['Strike','DTE','Time'],
         xlabel='Tickers by Call and Put',
         ylabel = 'Open Interest Change',
-        title = f"Call / Put OI changed - {ticker_selected} {chart_title}"
+        title = f"Call / Put OI changed - {ticker_selected} - Updated:{last_update_time} {chart_title}"
     )
 
 

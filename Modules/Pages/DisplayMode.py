@@ -53,8 +53,7 @@ table_timestamps = None
 
 try:
     # 连接数据库，获取所选日期所有表格的Timestamp列表
-    con, cur = connect_data_base()
-    _, _, table_timestamps = database_rw(operation='read', con=con, cur=cur, date=selected_date.strftime("%m-%d-%Y"), types=selected_data_type, DTE=selected_data_period)
+    _, _, table_timestamps = database_rw(operation='read', date=selected_date.strftime("%m-%d-%Y"), types=selected_data_type, DTE=selected_data_period)
 except Exception:
     # Display a streamlit animation to notify the user that data is still being prepared
     st.warning("Data will be updated during market hours, see you later.")
@@ -88,7 +87,7 @@ if table_timestamps is not None:
 
     # 获取选定时间和数据类型的所有ticker
 
-    option_change, last_update_time, _ = database_rw(operation='read', con=con, cur=cur, date=selected_date.strftime("%m-%d-%Y"), types=selected_data_type, DTE=selected_data_period, time=time_selected)
+    option_change, last_update_time, _ = database_rw(operation='read', date=selected_date.strftime("%m-%d-%Y"), types=selected_data_type, DTE=selected_data_period, time=time_selected)
 
     # 获取所有的ticker选项，用于循环显示图表
     ticker_options = option_change['Symbol'].unique()
@@ -109,8 +108,8 @@ if table_timestamps is not None:
             color=['#0AA638', '#FF5635'],
             x='Strike',
             y='Open Int',
-            title=f'Open Int base on strike price - {ticker} {chart_title}',
-            hover_cols=['Strike', 'DTE'],
+            title = f'Open Int base on strike price - {ticker} - Updated:{last_update_time} {chart_title}',
+            hover_cols=['Strike', 'DTE', 'Time'],
             height=280,
             width=900,
             rot=90,
@@ -128,10 +127,10 @@ if table_timestamps is not None:
             width=900,
             yformatter='%0f',
             rot=90,
-            hover_cols=['Strike', 'DTE'],
+            hover_cols=['Strike', 'DTE', 'Time'],
             xlabel='Tickers by Call and Put',
             ylabel='Open Interest Change',
-            title=f"Call / Put OI changed - {ticker} {chart_title}",
+            title = f"Call / Put OI changed - {ticker} - Updated:{last_update_time} {chart_title}",
             title_color='red'
         )
 
@@ -139,9 +138,5 @@ if table_timestamps is not None:
         st.bokeh_chart(hv.render(plot_one_tickerOI, backend="bokeh", use_container_width=True))
         st.bokeh_chart(hv.render(plot_one_tickerOI_change, backend="bokeh", use_container_width=True))
 
-
-    # 关闭数据库连接
-    cur.close()
-    con.close()
 else:
     st.markdown("[Fomostop.com](https://www.fomostop.com)")
