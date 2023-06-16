@@ -103,7 +103,7 @@ if table_timestamps is not None:
 
 
     # Create DataFrame for all the required columns
-    option_change_required = option_change[["Symbol", "Type", "Strike", "DTE", "Open Int", "OI Chg", "Volume", "Price", "IV", "Time"]]
+    option_change_required = option_change[["Symbol", "Type", "Strike", "DTE", "Open Int", "OI Chg", "Volume", "Price", "IV", "Last", "Time"]]
 
     # Sorting step one
     # Groupby Symbol, then calculate the total Open Int, and make it as a new column
@@ -135,17 +135,17 @@ if table_timestamps is not None:
     
     plot_top20OI = option_change_required_top_20.hvplot.bar(
         height=280,
-        width=900,
+        width=980,
         x="Symbol",
         xlabel="Symbol by Type",
         y="Open Int",
+        yformatter='%0f',
         ylabel="Open Interest",
         by="Type",
         hue=["Call","Put"], 
         color=['#FF5635', '#0AA638'], 
-        hover_cols=["Strike", "DTE", "Time"],
+        hover_cols=["Strike", "DTE", 'Last', "Time"],
         rot=90,
-        yformatter="%0f",
         title=f"Total Open Interest(Call+Put) Top 20 - Updated:{last_update_time} {chart_title}",
         
         
@@ -159,10 +159,10 @@ if table_timestamps is not None:
         color=['#FF5635', '#0AA638'],
         stacked=False,
         height=280,
-        width=900,
+        width=980,
         yformatter="%0f",
         rot=90,
-        hover_cols=["Strike", "DTE", "Time"],
+        hover_cols=["Strike", "DTE", 'Last', "Time"],
         xlabel="Tickers by Call and Put",
         ylabel="Open Interest Change",
         title= f"Tickers Call / Put Open Interests Change comparation - Updated:{last_update_time} {chart_title}",
@@ -176,10 +176,13 @@ if table_timestamps is not None:
         color=['#0AA638','#FF5635'],
         x = 'Strike',
         y = 'Open Int',
-        title = f'Open Int base on strike price - {ticker_selected} - Updated:{last_update_time} {chart_title}',
-        hover_cols = ['Strike','DTE','Time'],
+        yformatter='%0f',
+        xlabel='Tickers by Call and Put',
+        ylabel='Open Interest',
+        title = f'Open Interest by strike price - {ticker_selected} - Updated:{last_update_time} {chart_title}',
+        hover_cols = ['Strike','DTE', 'Last','Time'],
         height=280,
-        width=900, 
+        width=980, 
         rot = 90,
     )
     
@@ -192,10 +195,10 @@ if table_timestamps is not None:
         color=['#0AA638','#FF5635'],
         stacked=False,
         height=280,
-        width=900, 
+        width=980, 
         yformatter='%0f',
         rot=90,
-        hover_cols = ['Strike','DTE','Time'],
+        hover_cols = ['Strike', 'DTE', 'Last','Time'],
         xlabel='Tickers by Call and Put',
         ylabel = 'Open Interest Change',
         title = f"Call / Put OI changed - {ticker_selected} - Updated:{last_update_time} {chart_title}"
