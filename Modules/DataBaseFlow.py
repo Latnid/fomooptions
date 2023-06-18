@@ -1,4 +1,4 @@
-from CleanData import get_data
+from Modules.CleanData import get_data
 import os
 from dotenv import load_dotenv
 import psycopg2
@@ -10,28 +10,28 @@ import traceback
 
 # Load and assign variables.
 load_dotenv()
-SQL_DB = os.getenv('SQL_DB')
-SQL_USER = os.getenv("SQL_USER")
-SQL_PASSWORD = os.getenv("SQL_PASSWORD")
-SQL_HOST = os.getenv("SQL_HOST")
+SQL_DB = os.getenv('Flow_SQL_DB')
+SQL_USER = os.getenv("Flow_SQL_USER")
+SQL_PASSWORD = os.getenv("Flow_SQL_PASSWORD")
+SQL_HOST = os.getenv("Flow_SQL_HOST")
 
 def connect_data_base(database=SQL_DB, user=SQL_USER, password=SQL_PASSWORD, host=SQL_HOST):
     con = psycopg2.connect(database=SQL_DB, user=SQL_USER, password=SQL_PASSWORD, host=SQL_HOST)
     cur = con.cursor()
     cur.execute('SELECT version()')
     version = cur.fetchone()[0]
-    print(f"DataBase Connected!\nVersion: {version}")
+    print(f"DataBaseFlow Connected!\nVersion: {version}")
     return con, cur
 
 # write/read to database.
-def database_rw(operation, date, types, DTE='max', csv_time=datetime.now().timestamp(), time='latest'):
+def database_rw(operation, date, types, BDTE=None, EDTE=None, csv_time=datetime.now().timestamp(), time='latest'):
     now_timestamp = int(csv_time) #时间戳只保留秒（去掉更低的精度，保留整数部分）
     date_parts = date.split('-')  #分割日期字符串
     con, cur = connect_data_base() #连接数据库
 
     try:
         if operation == 'write':
-            combine_data = get_data(date, types, DTE)
+            combine_data = get_data(date, types, BDTE, EDTE)
             #构建写操作的表名
             write_table_name = f"_{date_parts[2]}_{date_parts[0]}_{date_parts[1]}_{types}_{now_timestamp}"  # 按照'YYYY_MM_DD'格式重新排列日期部分
 
@@ -86,55 +86,70 @@ def database_rw(operation, date, types, DTE='max', csv_time=datetime.now().times
                 read_table_query = f"SELECT table_name FROM information_schema.tables WHERE table_name LIKE '_{date_parts[2]}_{date_parts[0]}_{date_parts[1]}_{types}_%' ORDER BY table_name DESC LIMIT 1"
 
             cur.execute(read_table_query)
-            read_table_name = cur.fetchone()[0]
+            result = cur.fetchone()
 
-            #获取表的内容。
-            if DTE == 'min':
-                select_query = f"SELECT * FROM {read_table_name} WHERE \"DTE\" <= (SELECT MIN(\"DTE\") FROM {read_table_name})"
-            elif DTE == 'max':
-                select_query = f"SELECT * FROM {read_table_name} WHERE \"DTE\" <= (SELECT MAX(\"DTE\") FROM {read_table_name})"
+            # 没有找到当前日期任何table数据
+            if result is None:
+                return None
             else:
-                select_query = f"SELECT * FROM {read_table_name} WHERE \"DTE\" <= {DTE}"
+                read_table_name = result[0]
 
-            cur.execute(select_query)
-            rows = cur.fetchall()
-            columns = [desc[0] for desc in cur.description]  # 获取列名
+            # 获取表的内容，如果数据为空，则先返回max和min的值，如果不是空则返回请求数值。
+            if BDTE == None or EDTE == None:
+                select_query = f"SELECT MAX(\"DTE\"), MIN(\"DTE\") FROM {read_table_name}"
+                cur.execute(select_query)
+                result = cur.fetchone()
+                # 没有找到当前日期任何table数据
+                if result is None:
+                    return None
+                elif result is not None:
+                    max_DTE = int(result[0])
+                    min_DTE = int(result[1])
+                    return max_DTE, min_DTE
+            
+            elif EDTE != None and BDTE != None:
 
-            # 将获取到的数据转换为DataFrame
-            df = pd.DataFrame(rows, columns=columns)
-            # 显式指定列的数据类型
-            df = df.astype({
-                "Symbol": str,
-                "Price": float,
-                "Type": str,
-                "Strike": float,
-                "Exp Date": str,
-                "DTE": float,
-                "Bid": float,
-                "Midpoint": float,
-                "Ask": float,
-                "Last": float,
-                "Volume": float,
-                "Open Int": float,
-                "OI Chg": float,
-                "IV": float,
-                "Time": str
-            })
+                select_query = f"SELECT * FROM {read_table_name} WHERE \"DTE\" BETWEEN {BDTE} AND {EDTE}"
+                cur.execute(select_query)
+                rows = cur.fetchall()
+                columns = [desc[0] for desc in cur.description]  # 获取列名
 
-            # 获取该表最后修改的时间
-            last_modified_timestamp = int(read_table_name.split("_")[-1])
+                # 将获取到的数据转换为DataFrame
+                df = pd.DataFrame(rows, columns=columns)
+                # 显式指定列的数据类型
+                df = df.astype({
+                    "Symbol": str,
+                    "Price": float,
+                    "Type": str,
+                    "Strike": float,
+                    "Exp Date": str,
+                    "DTE": float,
+                    "Bid": float,
+                    "Midpoint": float,
+                    "Ask": float,
+                    "Last": float,
+                    "Volume": float,
+                    "Open Int": float,
+                    "OI Chg": float,
+                    "IV": float,
+                    "Time": str
+                })
 
-            # 将时间戳转换为 datetime 对象，并指定时区为华尔街时间（美国东部标准时间）
-            eastern_tz = pytz.timezone('US/Eastern')
-            eastern_datetime = (datetime.fromtimestamp(last_modified_timestamp, tz=eastern_tz)).strftime("%Y-%m-%d %H:%M:%S %Z")
+                # 获取该表最后修改的时间
+                last_modified_timestamp = int(read_table_name.split("_")[-1])
 
-            return df, eastern_datetime, table_timestamps
+                # 将时间戳转换为 datetime 对象，并指定时区为华尔街时间（美国东部标准时间）
+                eastern_tz = pytz.timezone('US/Eastern')
+                eastern_datetime = (datetime.fromtimestamp(last_modified_timestamp, tz=eastern_tz)).strftime("%Y-%m-%d %H:%M:%S %Z")
+
+                return df, eastern_datetime, table_timestamps
+            
 
     except Exception as e:
         # 发生异常时记录错误信息
         error_message = traceback.format_exc()
-        with open("error_log.txt", "a") as file:
-            file.write(f"Error in database_rw function:\n{error_message}\n")
+        with open("DataBaseFlow_error_log.txt", "a") as file:
+            file.write(f"Error in DataBaseFlow_database_rw function:\n{error_message}\n")
 
     finally:
         # 关闭数据库连接

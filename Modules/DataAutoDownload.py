@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import traceback
 from dotenv import load_dotenv
-from DataBase import database_rw
+from DataBaseFlow import database_rw
 
 #加载环境变量
 load_dotenv()
@@ -97,7 +97,7 @@ def write_data_to_database(directory):
     types_list = ['stocks', 'etfs']
 
     for types in types_list:
-        database_rw(operation='write', date=date, csv_time=modification_time, types=types, DTE='max')
+        database_rw(operation='write', date=date, csv_time=modification_time, types=types, BDTE = 'min', EDTE='max')
 
 
 
