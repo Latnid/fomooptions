@@ -9,7 +9,6 @@ from Modules.CleanData import get_data
 from Modules.DataBaseFlow import *
 
 def Display():
-    st.write(st.session_state)
     # Sidebar components for user input
     st.sidebar.title("Choose data parameters")
 
@@ -53,7 +52,34 @@ def Display():
         result = database_rw(operation = 'read', date = selected_date.strftime("%m-%d-%Y"), types = selected_data_type)
         if result:
             max_DTE, min_DTE = result
-            selected_data_period = st.sidebar.slider(label = "Days to expiration range", min_value=min_DTE, max_value= max_DTE, value=(0,60), step=1, format= "%i", key= "days_to_expiration_range_display", help="Use the slider to select an expiration day range (e.g., 10-30) and view only the data within that range.")    
+            def days_expiration_begin():
+                st.session_state['expirations_day_begin'] = st.session_state.days_to_expiration_begin
+            def days_expiration_end():
+                st.session_state['expirations_day_end'] = st.session_state.days_to_expiration_end
+            def days_expiration_range():
+                st.session_state['expirations_day_range'] = st.session_state.days_to_expiration_range
+                st.session_state['expirations_day_begin'] = st.session_state['expirations_day_range'][0]
+                st.session_state['expirations_day_end'] = st.session_state['expirations_day_range'][1]
+            
+            # 使用 Streamlit 的 columns 函数创建两列布局给expirations_day_begin和expirations_day_end并排使用
+            col1, col2 = st.sidebar.columns(2)
+            # 在第一列中放置第一个 selectbox
+            with col1:
+                if 'expirations_day_begin' not in st.session_state:
+                    selected_data_period_begin = st.number_input('Days to expiration range begin', min_value=0, max_value= max_DTE, value = min_DTE, key= "days_to_expiration_begin", on_change= days_expiration_begin )
+                    st.session_state['expirations_day_begin'] = st.session_state.days_to_expiration_begin
+                else:
+                    selected_data_period_begin = st.number_input('Days to expiration range begin', min_value=0, max_value= max_DTE, value = st.session_state['expirations_day_begin'], key= "days_to_expiration_begin", on_change= days_expiration_begin )
+            # 在第二列中放置第二个 selectbox
+            with col2:
+                if 'expirations_day_end' not in st.session_state:
+                    selected_data_period_end = st.number_input('Days to expiration range end', min_value=min_DTE, max_value= max_DTE, value = min_DTE, key="days_to_expiration_end", on_change= days_expiration_end)
+                    st.session_state['expirations_day_end'] = st.session_state.days_to_expiration_end
+                else:
+                    selected_data_period_end = st.number_input('Days to expiration range end', min_value=min_DTE, max_value= max_DTE, value = st.session_state['expirations_day_end'], key="days_to_expiration_end", on_change= days_expiration_end) 
+
+            selected_data_period = st.sidebar.slider('Days to expiration range', min_value=min_DTE, max_value= max_DTE, value=(st.session_state['expirations_day_begin'],st.session_state['expirations_day_end']), step=1, format= "%i",on_change= days_expiration_range, key= "days_to_expiration_range", help="Use the slider to select an expiration day range (e.g., 10-30,10-10) and view only the data within that range.")    
+            
             selected_data_period_begin = selected_data_period[0]
             selected_data_period_end = selected_data_period[1]
 

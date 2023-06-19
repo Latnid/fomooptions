@@ -29,7 +29,6 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # Add content to the sidebar
 st.sidebar.markdown("<h1><a href='https://www.fomostop.com' style='text-decoration:none;'>FOMOSTOP</a></h1>", unsafe_allow_html=True)
 st.sidebar.write("A daily analysis of options flow.")
-st.write(st.session_state)
 user_hash = get_user_hash()
 
 def sign_in_button_status():
@@ -42,7 +41,7 @@ else:
     if "sign_in_button_clicked" not in st.session_state:
         if st.sidebar.button("Sign in", key= "sign_in", on_click= sign_in_button_status):
             Login()
-            st.write(_get_websocket_headers())
+            #st.write(_get_websocket_headers())
     elif "sign_in_button_clicked" in st.session_state:
         Login()
-        st.write(_get_websocket_headers())
+        #st.write(_get_websocket_headers())

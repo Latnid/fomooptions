@@ -9,7 +9,6 @@ from Modules.CleanData import get_data
 from Modules.DataBaseFlow import *
 
 def Analysis():
-    st.write(st.session_state)
     # Sidebar components for user input
     st.sidebar.title("Choose data parameters")
 
@@ -26,15 +25,15 @@ def Analysis():
         selected_date = st.sidebar.date_input("Select data date",key = 'selected_date', on_change = date_select, value = st.session_state.selected_date)
 
     #定义回调函数,用于处理st.session['selected_data_type']
-    def type_select_display():
+    def type_select():
         st.session_state['selected_type'] = st.session_state.selected_type
-    def type_init_display():
+    def type_init():
         st.session_state['selected_type'] = st.session_state.selected_type_init
 
     if 'selected_type' not in st.session_state:
-        selected_data_type = st.sidebar.selectbox("Select data type",['stocks','etfs'], key = 'selected_type_init',on_change= type_init_display)
+        selected_data_type = st.sidebar.selectbox("Select data type",['stocks','etfs'], key = 'selected_type_init',on_change= type_init)
     else:
-        selected_data_type = st.sidebar.selectbox("Select data type", ['stocks','etfs'], key = 'selected_data_type',on_change= type_select_display, index=  ['stocks','etfs'].index(st.session_state['selected_type']) )
+        selected_data_type = st.sidebar.selectbox("Select data type", ['stocks','etfs'], key = 'selected_data_type',on_change= type_select, index=  ['stocks','etfs'].index(st.session_state['selected_type']) )
 
     #selected_data_type = st.sidebar.selectbox("Select data type", ["stocks", "etfs"])
     
@@ -43,9 +42,37 @@ def Analysis():
         #连接数据库，获取所选日期中DTE的最大和最小值
         result = database_rw(operation = 'read', date = selected_date.strftime("%m-%d-%Y"), types = selected_data_type)
         
-        if result:
+        if result:        
             max_DTE, min_DTE = result
-            selected_data_period = st.sidebar.slider('Days to expiration range', min_value=min_DTE, max_value= max_DTE, value=(0,60), step=1, format= "%i", key= "days_to_expiration_range", help="Use the slider to select an expiration day range (e.g., 10-30,10-10) and view only the data within that range.")    
+
+            def days_expiration_begin():
+                st.session_state['expirations_day_begin'] = st.session_state.days_to_expiration_begin
+            def days_expiration_end():
+                st.session_state['expirations_day_end'] = st.session_state.days_to_expiration_end
+            def days_expiration_range():
+                st.session_state['expirations_day_range'] = st.session_state.days_to_expiration_range
+                st.session_state['expirations_day_begin'] = st.session_state['expirations_day_range'][0]
+                st.session_state['expirations_day_end'] = st.session_state['expirations_day_range'][1]
+            
+            # 使用 Streamlit 的 columns 函数创建两列布局给expirations_day_begin和expirations_day_end并排使用
+            col1, col2 = st.sidebar.columns(2)
+            # 在第一列中放置第一个 selectbox
+            with col1:
+                if 'expirations_day_begin' not in st.session_state:
+                    selected_data_period_begin = st.number_input('Days to expiration range begin', min_value=0, max_value= max_DTE, value = min_DTE, key= "days_to_expiration_begin", on_change= days_expiration_begin )
+                    st.session_state['expirations_day_begin'] = st.session_state.days_to_expiration_begin
+                else:
+                    selected_data_period_begin = st.number_input('Days to expiration range begin', min_value=0, max_value= max_DTE, value = st.session_state['expirations_day_begin'], key= "days_to_expiration_begin", on_change= days_expiration_begin )
+            # 在第二列中放置第二个 selectbox
+            with col2:
+                if 'expirations_day_end' not in st.session_state:
+                    selected_data_period_end = st.number_input('Days to expiration range end', min_value=min_DTE, max_value= max_DTE, value = min_DTE, key="days_to_expiration_end", on_change= days_expiration_end)
+                    st.session_state['expirations_day_end'] = st.session_state.days_to_expiration_end
+                else:
+                    selected_data_period_end = st.number_input('Days to expiration range end', min_value=min_DTE, max_value= max_DTE, value = st.session_state['expirations_day_end'], key="days_to_expiration_end", on_change= days_expiration_end) 
+
+            selected_data_period = st.sidebar.slider('Days to expiration range', min_value=min_DTE, max_value= max_DTE, value=(st.session_state['expirations_day_begin'],st.session_state['expirations_day_end']), step=1, format= "%i",on_change= days_expiration_range, key= "days_to_expiration_range", help="Use the slider to select an expiration day range (e.g., 10-30,10-10) and view only the data within that range.")    
+            
             selected_data_period_begin = selected_data_period[0]
             selected_data_period_end = selected_data_period[1]
             #连接数据库，获取所选日期所有表格的Timestamp列表
@@ -84,7 +111,10 @@ def Analysis():
 
         #定义两个回调函数，用于处理st.session['ticker_selected']
         def ticker_select():
-            st.session_state['ticker_selected'] = st.session_state.ticker_sel
+            if 'ticker_sel' not in st.session_state:
+                st.session_state['ticker_sel'] = ticker_select[0]
+            else:
+                st.session_state['ticker_selected'] = st.session_state.ticker_sel
 
         def ticker_init():
             st.session_state['ticker_selected'] = st.session_state.ticker_init
@@ -95,10 +125,10 @@ def Analysis():
         # Ticker selected
         ticker_options = option_change['Symbol'].unique().tolist()
         if 'ticker_selected' not in st.session_state or st.session_state['ticker_selected'] not in ticker_options:
-            ticker_selected = st.sidebar.selectbox('Ticker', options=ticker_options,key='ticker_init',on_change=ticker_init)
+            ticker_selected = st.sidebar.selectbox('Ticker', options=ticker_options, key='ticker_init', on_change=ticker_init)
             
         elif 'ticker_selected' in st.session_state and st.session_state['ticker_selected'] in ticker_options:
-            ticker_selected = st.sidebar.selectbox('Ticker', options=ticker_options,key='ticker_sel',on_change = ticker_select, index=ticker_options.index(st.session_state['ticker_selected']))
+            ticker_selected = st.sidebar.selectbox('Ticker', options=ticker_options, key='ticker_sel', on_change = ticker_select, index=ticker_options.index(st.session_state['ticker_selected']))
 
         st.sidebar.write(f"Last update: {last_update_time}")
 
