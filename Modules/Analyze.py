@@ -9,6 +9,7 @@ from Modules.CleanData import get_data
 from Modules.DataBaseFlow import *
 
 def Analysis():
+    st.write(st.session_state)
     # Sidebar components for user input
     st.sidebar.title("Choose data parameters")
 
@@ -46,9 +47,15 @@ def Analysis():
             max_DTE, min_DTE = result
 
             def days_expiration_begin():
-                st.session_state['expirations_day_begin'] = st.session_state.days_to_expiration_begin
+                if 'expirations_day_begin' not in st.session_state:
+                    st.session_state['expirations_day_begin'] = min_DTE
+                else:
+                    st.session_state['expirations_day_begin'] = st.session_state.days_to_expiration_begin
             def days_expiration_end():
-                st.session_state['expirations_day_end'] = st.session_state.days_to_expiration_end
+                if 'expirations_day_end' not in st.session_state:
+                    st.session_state['expirations_day_end'] = min_DTE
+                else:
+                    st.session_state['expirations_day_end'] = st.session_state.days_to_expiration_end
             def days_expiration_range():
                 st.session_state['expirations_day_range'] = st.session_state.days_to_expiration_range
                 st.session_state['expirations_day_begin'] = st.session_state['expirations_day_range'][0]
@@ -59,17 +66,29 @@ def Analysis():
             # 在第一列中放置第一个 selectbox
             with col1:
                 if 'expirations_day_begin' not in st.session_state:
-                    selected_data_period_begin = st.number_input('Days to expiration range begin', min_value=0, max_value= max_DTE, value = min_DTE, key= "days_to_expiration_begin", on_change= days_expiration_begin )
+                    selected_data_period_begin = st.number_input('Days to expiration range begin', min_value=min_DTE, max_value= max_DTE, value = min_DTE, key= "days_to_expiration_begin", on_change= days_expiration_begin )
                     st.session_state['expirations_day_begin'] = st.session_state.days_to_expiration_begin
                 else:
-                    selected_data_period_begin = st.number_input('Days to expiration range begin', min_value=0, max_value= max_DTE, value = st.session_state['expirations_day_begin'], key= "days_to_expiration_begin", on_change= days_expiration_begin )
+                    #make sure min_DTE < st.session_state['expirations_day']/st.session_state['expirations_day_end'] < max_DTE
+                    if st.session_state['expirations_day_begin'] < min_DTE:
+                        st.session_state['expirations_day_begin'] = min_DTE
+                    if st.session_state['expirations_day_end'] > max_DTE:
+                        st.session_state['expirations_day_end'] = max_DTE
+
+                    selected_data_period_begin = st.number_input('Days to expiration range begin', min_value=min_DTE, max_value= max_DTE, value = st.session_state['expirations_day_begin'], key= "days_to_expiration_begin", on_change= days_expiration_begin )
             # 在第二列中放置第二个 selectbox
             with col2:
                 if 'expirations_day_end' not in st.session_state:
                     selected_data_period_end = st.number_input('Days to expiration range end', min_value=min_DTE, max_value= max_DTE, value = min_DTE, key="days_to_expiration_end", on_change= days_expiration_end)
                     st.session_state['expirations_day_end'] = st.session_state.days_to_expiration_end
                 else:
-                    selected_data_period_end = st.number_input('Days to expiration range end', min_value=min_DTE, max_value= max_DTE, value = st.session_state['expirations_day_end'], key="days_to_expiration_end", on_change= days_expiration_end) 
+                    #make sure min_DTE < st.session_state['expirations_day']/st.session_state['expirations_day_end'] < max_DTE
+                    if st.session_state['expirations_day_end'] < min_DTE:
+                        st.session_state['expirations_day_end'] = min_DTE
+                    if st.session_state['expirations_day_end'] > max_DTE:
+                        st.session_state['expirations_day_end'] = max_DTE
+                    else:
+                        selected_data_period_end = st.number_input('Days to expiration range end', min_value=min_DTE, max_value= max_DTE, value = st.session_state['expirations_day_end'], key="days_to_expiration_end", on_change= days_expiration_end) 
 
             selected_data_period = st.sidebar.slider('Days to expiration range', min_value=min_DTE, max_value= max_DTE, value=(st.session_state['expirations_day_begin'],st.session_state['expirations_day_end']), step=1, format= "%i",on_change= days_expiration_range, key= "days_to_expiration_range", help="Use the slider to select an expiration day range (e.g., 10-30,10-10) and view only the data within that range.")    
             
@@ -112,7 +131,7 @@ def Analysis():
         #定义两个回调函数，用于处理st.session['ticker_selected']
         def ticker_select():
             if 'ticker_sel' not in st.session_state:
-                st.session_state['ticker_sel'] = ticker_select[0]
+                st.session_state['ticker_sel'] = ticker_options[0]
             else:
                 st.session_state['ticker_selected'] = st.session_state.ticker_sel
 
@@ -176,7 +195,7 @@ def Analysis():
             yformatter='%0f',
             ylabel="Open Interest",
             by="Type",
-            hue=["Call","Put"], 
+            #hue=["Call","Put"],
             color=['#FF5635', '#0AA638'], 
             hover_cols=["Strike", "DTE", 'Last', "Time"],
             rot=90,
@@ -189,7 +208,7 @@ def Analysis():
         plot_top20OI_chg = option_change_required_top_20.hvplot.bar(
             y="OI Chg",
             by="Type",
-            hue=["Call","Put"], 
+            #hue=["Call","Put"], 
             color=['#FF5635', '#0AA638'],
             stacked=False,
             height=280,
@@ -206,7 +225,7 @@ def Analysis():
         #Open Int call put in one ticker
         plot_one_tickerOI = option_change[option_change['Symbol'] == ticker_selected].hvplot.bar(
             by='Type',
-            hue=["Call","Put"], 
+            #hue=["Call","Put"], 
             color=['#0AA638','#FF5635'],
             x = 'Strike',
             y = 'Open Int',
@@ -225,7 +244,7 @@ def Analysis():
             x = 'Strike',
             y='OI Chg',
             by='Type',
-            hue=["Call","Put"], 
+            #hue=["Call","Put"], 
             color=['#0AA638','#FF5635'],
             stacked=False,
             height=280,
@@ -240,10 +259,10 @@ def Analysis():
 
 
         # Show the Bokeh figure using st.bokeh_chart
-        st.bokeh_chart(hv.render(plot_top20OI, backend="bokeh", use_container_width=True))
-        st.bokeh_chart(hv.render(plot_top20OI_chg, backend="bokeh",use_container_width=True))
-        st.bokeh_chart(hv.render(plot_one_tickerOI, backend="bokeh", use_container_width=True))
-        st.bokeh_chart(hv.render(plot_one_tickerOI_change, backend="bokeh", use_container_width=True))
+        st.bokeh_chart(hv.render(plot_top20OI, backend="bokeh", ))
+        st.bokeh_chart(hv.render(plot_top20OI_chg, backend="bokeh",))
+        st.bokeh_chart(hv.render(plot_one_tickerOI, backend="bokeh",))
+        st.bokeh_chart(hv.render(plot_one_tickerOI_change, backend="bokeh"))
             
         
     #Shows weblink if error happen.

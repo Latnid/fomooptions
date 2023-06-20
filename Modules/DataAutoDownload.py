@@ -9,6 +9,7 @@ from selenium.webdriver.chrome.options import Options
 import traceback
 from dotenv import load_dotenv
 from DataBaseFlow import database_rw
+import pandas_market_calendars as mcal
 
 #加载环境变量
 load_dotenv()
@@ -111,12 +112,28 @@ def clean_csv():
             os.remove(os.path.join(downloads_path, f))
     print('.csv files cleaned')
 
+# def is_trading_hours(current_time):
+#     """判断当前时间是否在美国证券交易时间内"""
+#     trading_start_time = datetime.strptime('9:30', '%H:%M').time()
+#     trading_end_time = datetime.strptime('16:00', '%H:%M').time()
+#     if current_time.weekday() < 5 and trading_start_time <= current_time.time() <= trading_end_time:
+#         return True
+#     return False
+
 def is_trading_hours(current_time):
     """判断当前时间是否在美国证券交易时间内"""
+    nyse = mcal.get_calendar('NYSE')
+    trading_dates = nyse.schedule(start_date=current_time.date(), end_date=current_time.date())
+    if len(trading_dates) == 0:
+        return False
+
     trading_start_time = datetime.strptime('9:30', '%H:%M').time()
     trading_end_time = datetime.strptime('16:00', '%H:%M').time()
-    if current_time.weekday() < 5 and trading_start_time <= current_time.time() <= trading_end_time:
+    if (
+        trading_start_time <= current_time.time() <= trading_end_time
+    ):
         return True
+
     return False
 
 if __name__ == '__main__':

@@ -1,5 +1,11 @@
-from Modules.CleanData import get_data
+import sys
 import os
+
+# 将根目录添加到模块搜索路径中
+root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(root_path)
+
+from Modules.CleanData import get_data
 from dotenv import load_dotenv
 import psycopg2
 import psycopg2.extras
