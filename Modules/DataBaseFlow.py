@@ -36,8 +36,9 @@ def database_rw(operation, date, types, BDTE=None, EDTE=None, csv_time=datetime.
     con, cur = connect_data_base() #连接数据库
 
     try:
+        #write data to database, DTE = 'max' means all the data collected.
         if operation == 'write':
-            combine_data = get_data(date, types, BDTE, EDTE)
+            combine_data = get_data(date, types, DTE = 'max')
             #构建写操作的表名
             write_table_name = f"_{date_parts[2]}_{date_parts[0]}_{date_parts[1]}_{types}_{now_timestamp}"  # 按照'YYYY_MM_DD'格式重新排列日期部分
 

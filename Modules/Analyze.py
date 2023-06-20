@@ -9,7 +9,7 @@ from Modules.CleanData import get_data
 from Modules.DataBaseFlow import *
 
 def Analysis():
-    st.write(st.session_state)
+
     # Sidebar components for user input
     st.sidebar.title("Choose data parameters")
 
@@ -267,4 +267,4 @@ def Analysis():
         
     #Shows weblink if error happen.
     else:
-        st.markdown("[Fomostop.com](https://www.fomostop.com)")
+        st.markdown("[Join our group at pro.Fomostop.com](https://links.fomostop.com/join)")

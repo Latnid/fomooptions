@@ -26,7 +26,7 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Add content to the sidebar
-st.sidebar.markdown("<h1><a href='https://www.fomostop.com' style='text-decoration:none;'>FOMOSTOP</a></h1>", unsafe_allow_html=True)
+st.sidebar.markdown("<h1><a href='https://links.fomostop.com/join' style='text-decoration:none;'>FOMOSTOP</a></h1>", unsafe_allow_html=True)
 st.sidebar.write("A daily analysis of options flow.")
 
 def sign_in_button_status():

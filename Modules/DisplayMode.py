@@ -196,4 +196,4 @@ def Display():
             st.bokeh_chart(hv.render(plot_one_tickerOI_change, backend="bokeh"))
 
     else:
-        st.markdown("[Fomostop.com](https://www.fomostop.com)")
+        st.markdown("[Join our group at pro.Fomostop.com](https://links.fomostop.com/join)")
