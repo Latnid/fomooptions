@@ -42,17 +42,17 @@ def Login():
         
 
     with st.sidebar.form("Sign In"):
-        user_email = st.text_input("请输入邮箱", key="user_email")
+        user_email = st.text_input("Input email", key="user_email")
         user_id = None
         user_group = None
         # Track last sent timestamp，if not exist set 0
         last_sent_timestamp = st.session_state.get("last_sent_timestamp", 0)
 
-        if st.form_submit_button(f"发送验证码", on_click=generate_send_password):
+        if st.form_submit_button(f"send passcode", on_click=generate_send_password):
 
             # Check if email format is valid
             if not re.match(r"[^@]+@[^@]+\.[^@]+", user_email):
-                st.warning("邮箱格式无效，请重新输入有效的邮箱地址。")
+                st.warning("Invalid email address.")
                 return
             
             # Check if enough time has passed since last sent timestamp
@@ -63,7 +63,7 @@ def Login():
                 countdown_text = st.empty()
                 countdown_seconds = 10 - time_difference
                 while countdown_seconds > 0:
-                    countdown_text.warning(f"请等待 {countdown_seconds} 秒后再发送验证码。")
+                    countdown_text.warning(f"Please wait for {countdown_seconds} seconds。")
                     time.sleep(1)
                     countdown_seconds -= 1
                 countdown_text.empty()
@@ -91,9 +91,21 @@ def Login():
                     if data:
                         user_id = data['id']
                         user_group = data["groups"][0]["name"]
+                        #check premium status
+                        for group in data["groups"]:
+                            if group.get('name') == 'F/S Premium':
+                                premium_group = group.get('name')
+                                break
+                            elif group.get('name') == "F/S Basic":
+                                premium_group = group.get('name')
+                                break
+                        else:
+                            premium_group = None                        
+                        
                         # Save user_id and user_group in st.session_state
                         st.session_state.user_id = user_id
                         st.session_state.user_group = user_group
+                        st.session_state.premium_group = premium_group
 
                         # Send DM to the user
                         DM_url = "https://api.heartbeat.chat/v0/directMessages"
@@ -105,32 +117,33 @@ def Login():
                         #remember when was last time sent the passcode.
                         st.session_state.last_sent_timestamp = int(time.time())
 
-                        st.success("验证码已私信到对应用户")
+                        st.success(f"passcode was sent by direct message to your community account")
 
                 elif response.status_code == 404:
                     #user not found
                     st.session_state.user_found = False
-                    st.write("邮箱对应用户不存在。")
+                    st.write("Email address has not sign up yet。")
                 else:
-                    st.write("获取用户信息时发生错误。")
+                    st.write("Contract admin if continute has issues。")
 
         if "user_found" in st.session_state and st.session_state.user_found == True:
             # Password verification
-            user_input_password = st.text_input("请输入密码", key='user_input_password')
+            user_input_password = st.text_input("Input passcode", key='user_input_password')
 
-            if st.form_submit_button("登录"):
+            if st.form_submit_button("Log In"):
                 if auth_password('verify_password', user_input_password, st.session_state.generated_sent_password):
                     # Insert database
+                    st.success("Welcome Back!")
                     login_control(method="login_success", user_hash=get_user_hash(), user_email=user_email,
-                                user_group=st.session_state.user_group)
+                                user_group=st.session_state.user_group, premium_group = st.session_state.premium_group)
 
-                    st.success("登录成功！")
+                    
 
 
                     # Autorefresh after signed in successfully
                     st.experimental_rerun()
                 else:
-                    st.error("密码错误！")
+                    st.error("Invaild passcode!")
         else:
             pass
 

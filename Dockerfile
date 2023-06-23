@@ -1,5 +1,5 @@
 # 使用基于 selenium/standalone-chrome:dev 镜像作为基础镜像
-FROM optionweb:1.0
+FROM optionsweb:1.6
 
 # 设置工作目录
 #WORKDIR /app

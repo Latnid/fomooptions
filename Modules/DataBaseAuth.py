@@ -23,7 +23,7 @@ def connect_data_base(database=SQL_DB, user=SQL_USER, password=SQL_PASSWORD, hos
     return con, cur
 
 #Login
-def login_control(method, user_hash, user_email = None, user_group = None):
+def login_control(method, user_hash, user_email = None, user_group = None, premium_group = None):
 
     try:
         #connect db
@@ -38,18 +38,37 @@ def login_control(method, user_hash, user_email = None, user_group = None):
             ny_time = datetime.now(ny_timezone)
             # Create table if not esists,
             cur.execute(
-            "CREATE TABLE IF NOT EXISTS %s (create_time TIMESTAMPTZ, user_hash TEXT, user_email TEXT, user_group TEXT);" %verifier_table_name)
+            "CREATE TABLE IF NOT EXISTS %s (create_time TIMESTAMPTZ, user_hash TEXT, user_email TEXT, user_group TEXT, premium_group TEXT);" %verifier_table_name)
             # excute SQL command
             con.commit()
-
-            #Delete record ceated previously with the same email
-            cur.execute("DELETE FROM {} WHERE user_email = %s".format(verifier_table_name), (user_email,))
-            # excute query
-            con.commit()  
+            
+            # Determine the number of records to keep based on the login device
+            if premium_group == 'F/S Premium':
+                login_device_count = 3
+            elif premium_group == 'F/S Basic':
+                login_device_count = 2
+            else:
+                login_device_count = 1
+                
+            query = """
+                DELETE FROM login_status
+                WHERE user_email = %s AND (create_time, user_hash) NOT IN (
+                    SELECT create_time, user_hash
+                    FROM (
+                        SELECT create_time, user_hash,
+                            ROW_NUMBER() OVER (ORDER BY create_time DESC) AS row_num
+                        FROM login_status
+                        WHERE user_email = %s
+                    ) AS subquery
+                    WHERE row_num < %s
+                )
+            """
+            cur.execute(query, (user_email, user_email, login_device_count))
+            con.commit()
 
             # Insert all data to database and excute.  
-            cur.execute("INSERT INTO {} (create_time,user_hash,user_email, user_group) VALUES (%s,%s,%s,%s)".format(verifier_table_name),
-            (ny_time, user_hash, user_email, user_group))
+            cur.execute("INSERT INTO {} (create_time,user_hash,user_email, user_group, premium_group) VALUES (%s,%s,%s,%s,%s)".format(verifier_table_name),
+            (ny_time, user_hash, user_email, user_group, premium_group))
             # excute query
             con.commit()
 
@@ -62,9 +81,19 @@ def login_control(method, user_hash, user_email = None, user_group = None):
                 row = cur.fetchone()
                 user_hash_db = row[0]
                 if user_hash == user_hash_db:
-                    return True
+                    #continute check premium group
+                    cur.execute(
+                        "SELECT premium_group FROM login_status WHERE user_hash = '{}'".format(user_hash)
+                    )
+                    if cur.rowcount>0: #Found the user_hash in the table
+                        row = cur.fetchone()
+                        premium_group_db = row[0]                    
+                    return True,premium_group_db
                 else:
-                    return False
+                    premium_group_db = None 
+                    return False , premium_group_db
+            else:
+                return False, None
                 
         elif method == "logout":
             #Delete record ceated previously with the user_hash

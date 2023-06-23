@@ -8,7 +8,7 @@ import hvplot.pandas
 from Modules.CleanData import get_data
 from Modules.DataBaseFlow import *
 
-def Analysis():
+def Analysis_basic():
 
     # Sidebar components for user input
     st.sidebar.title("Choose data parameters")
@@ -16,12 +16,13 @@ def Analysis():
     # 定义回调函数，用于处理st.session['selected_date']
     def date_select():
         st.session_state['selected_date'] = st.session_state.selected_date
-
+        
     def date_init():
         st.session_state['selected_date'] = st.session_state.selected_date_init
 
     if 'selected_date' not in st.session_state:
         selected_date = st.sidebar.date_input("Select data date", key = 'selected_date_init', value=pd.Timestamp.now(tz=pytz.timezone('US/Eastern')).date(),on_change=date_init)
+        st.session_state['selected_date'] = selected_date
     else:
         selected_date = st.sidebar.date_input("Select data date",key = 'selected_date', on_change = date_select, value = st.session_state.selected_date)
 
@@ -66,7 +67,7 @@ def Analysis():
             # 在第一列中放置第一个 selectbox
             with col1:
                 if 'expirations_day_begin' not in st.session_state:
-                    selected_data_period_begin = st.number_input('Days to expiration range begin', min_value=min_DTE, max_value= max_DTE, value = min_DTE, key= "days_to_expiration_begin", on_change= days_expiration_begin )
+                    selected_data_period_begin = st.number_input('Days to expiration range begin', min_value=min_DTE, max_value= max_DTE, value = min_DTE, key= "days_to_expiration_begin", on_change= days_expiration_begin, disabled= True )
                     st.session_state['expirations_day_begin'] = st.session_state.days_to_expiration_begin
                 else:
                     #make sure min_DTE < st.session_state['expirations_day']/st.session_state['expirations_day_end'] < max_DTE
@@ -75,7 +76,7 @@ def Analysis():
                     if st.session_state['expirations_day_end'] > max_DTE:
                         st.session_state['expirations_day_end'] = max_DTE
 
-                    selected_data_period_begin = st.number_input('Days to expiration range begin', min_value=min_DTE, max_value= max_DTE, value = st.session_state['expirations_day_begin'], key= "days_to_expiration_begin", on_change= days_expiration_begin )
+                    selected_data_period_begin = st.number_input('Days to expiration range begin', min_value=min_DTE, max_value= max_DTE, value = st.session_state['expirations_day_begin'], key= "days_to_expiration_begin", on_change= days_expiration_begin, disabled= True )
             # 在第二列中放置第二个 selectbox
             with col2:
                 if 'expirations_day_end' not in st.session_state:
@@ -90,7 +91,7 @@ def Analysis():
                     else:
                         selected_data_period_end = st.number_input('Days to expiration range end', min_value=min_DTE, max_value= max_DTE, value = st.session_state['expirations_day_end'], key="days_to_expiration_end", on_change= days_expiration_end) 
 
-            selected_data_period = st.sidebar.slider('Days to expiration range', min_value=min_DTE, max_value= max_DTE, value=(st.session_state['expirations_day_begin'],st.session_state['expirations_day_end']), step=1, format= "%i",on_change= days_expiration_range, key= "days_to_expiration_range", help="Use the slider to select an expiration day range (e.g., 10-30,10-10) and view only the data within that range.")    
+            selected_data_period = st.sidebar.slider('Days to expiration range', min_value=min_DTE, max_value= max_DTE, value=(st.session_state['expirations_day_begin'],st.session_state['expirations_day_end']), step=1, format= "%i",on_change= days_expiration_range, key= "days_to_expiration_range", help="Use the slider to select an expiration day range (e.g., 10-30,10-10) and view only the data within that range.", disabled= True)    
             
             selected_data_period_begin = selected_data_period[0]
             selected_data_period_end = selected_data_period[1]
@@ -122,9 +123,9 @@ def Analysis():
             st.session_state['time_selected'] = st.session_state.time_init
 
         if 'time_selected' not in st.session_state or st.session_state['time_selected'] not in table_timestamps:
-            time_selected_formatted = st.sidebar.selectbox('Data time', options=formatted_table_timestamps, key='time_init', on_change=time_init)
+            time_selected_formatted = st.sidebar.selectbox('Data time', options=formatted_table_timestamps, key='time_init', on_change=time_init, disabled= True)
         else:
-            time_selected_formatted = st.sidebar.selectbox('Data time', options=formatted_table_timestamps, key='time_select', on_change=time_select, index=formatted_table_timestamps.index(st.session_state['time_selected']))
+            time_selected_formatted = st.sidebar.selectbox('Data time', options=formatted_table_timestamps, key='time_select', on_change=time_select, index=formatted_table_timestamps.index(st.session_state['time_selected']), disabled= True)
 
         time_selected = table_timestamps[formatted_table_timestamps.index(time_selected_formatted)]
 
@@ -183,7 +184,7 @@ def Analysis():
         )
         
         #Title of the charts
-        chart_title = '                options.fomostop.com'
+        chart_title = f"options expiration range: {selected_data_period_begin} to {selected_data_period_end}            options.fomostop.com"
         # Top 20 symbols ranked by total open interest，Call / Put Open Interest comparation
         
         plot_top20OI = option_change_required_top_20.hvplot.bar(
@@ -199,7 +200,7 @@ def Analysis():
             color=['#FF5635', '#0AA638'], 
             hover_cols=["Strike", "DTE", 'Last', "Time"],
             rot=90,
-            title=f"Total Open Interest(Call+Put) Top 20 - Updated:{last_update_time} {chart_title}",
+            title=f"Total Open Interest(Top 20) - Updated:{last_update_time} - {chart_title}",
             
             
 
@@ -218,7 +219,7 @@ def Analysis():
             hover_cols=["Strike", "DTE", 'Last', "Time"],
             xlabel="Tickers by Call and Put",
             ylabel="Open Interest Change",
-            title= f"Tickers Call / Put Open Interests Change comparation - Updated:{last_update_time} {chart_title}",
+            title= f"Open Interests Change - Updated:{last_update_time} - {chart_title}",
         )
 
 
@@ -232,7 +233,7 @@ def Analysis():
             yformatter='%0f',
             xlabel='Tickers by Call and Put',
             ylabel='Open Interest',
-            title = f'Open Interest by strike price - {ticker_selected} - Updated:{last_update_time} {chart_title}',
+            title = f'Open Interest Spread - Ticker: {ticker_selected} - Updated:{last_update_time} - {chart_title}',
             hover_cols = ['Strike','DTE', 'Last','Time'],
             height=280,
             width=980, 
@@ -254,7 +255,7 @@ def Analysis():
             hover_cols = ['Strike', 'DTE', 'Last','Time'],
             xlabel='Tickers by Call and Put',
             ylabel = 'Open Interest Change',
-            title = f"Call / Put OI changed - {ticker_selected} - Updated:{last_update_time} {chart_title}"
+            title = f"Open Interest Change - Ticker: {ticker_selected} - Updated:{last_update_time} - {chart_title}"
         )
 
 

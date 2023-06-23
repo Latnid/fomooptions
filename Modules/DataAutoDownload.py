@@ -151,7 +151,7 @@ if __name__ == '__main__':
                 write_data_to_database(directory = os.path.join(os.path.dirname(__file__), "../Data/Increase/"))
                 print("Repeat in one hour.")
                 # 倒计时1小时
-                for i in range(60*60, 0, -1):
+                for i in range(20*60, 0, -1):
                     mins, secs = divmod(i, 60)
                     time_format = f"{mins:02d}:{secs:02d}"
                     print(f"Next download in {time_format}...", end="\r")

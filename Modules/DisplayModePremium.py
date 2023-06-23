@@ -8,7 +8,7 @@ import holoviews as hv
 from Modules.CleanData import get_data
 from Modules.DataBaseFlow import *
 
-def Display():
+def Display_premium():
     # Sidebar components for user input
     st.sidebar.title("Choose data parameters")
 
@@ -21,7 +21,8 @@ def Display():
         st.session_state['selected_date'] = st.session_state.selected_date_init
 
     if 'selected_date' not in st.session_state:
-        selected_date = st.sidebar.date_input("Select data date", key = 'selected_date_init', value=pd.Timestamp.now(tz=pytz.timezone('US/Eastern')).date(),on_change= date_init_display)
+        selected_date = st.sidebar.date_input("Select data date", key = 'selected_date_init', value=pd.Timestamp.now(tz=pytz.timezone('US/Eastern')).date(), on_change= date_init_display)
+        st.session_state['selected_date'] = selected_date
     else:
         selected_date = st.sidebar.date_input("Select data date",key = 'selected_date', on_change = date_select_display, value = st.session_state.selected_date)
 
@@ -151,7 +152,7 @@ def Display():
         sorted_option_change = option_change[option_change['Symbol'].isin(sorted_tickers)]
 
         # 设置图表标题
-        chart_title = f"{selected_data_period_end} Days to Expiration"
+        chart_title = f"options expiration range: {selected_data_period_begin} to {selected_data_period_end}            options.fomostop.com"
 
         # 在同一个页面显示选定的ticker的图表
         for ticker in sorted_tickers:
@@ -165,7 +166,7 @@ def Display():
                 yformatter='%0f',
                 xlabel='Tickers by Call and Put',
                 ylabel='Open Interest',
-                title = f'Open Interest by strike price - {ticker} - Updated:{last_update_time} {chart_title}',
+                title = f'Open Interest Spread - Ticker: {ticker} - Updated:{last_update_time} - {chart_title}',
                 hover_cols=['Strike', 'DTE', 'Last', 'Time'],
                 height=280,
                 width=980,
@@ -187,7 +188,7 @@ def Display():
                 hover_cols=['Strike', 'DTE', 'Last', 'Time'],
                 xlabel='Tickers by Call and Put',
                 ylabel='Open Interest Change',
-                title = f"Call / Put OI changed - {ticker} - Updated:{last_update_time} {chart_title}",
+                title = f"Open Interest Change - Ticker: {ticker} - Updated:{last_update_time} - {chart_title}",
                 
             )
 
