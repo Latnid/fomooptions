@@ -9,7 +9,7 @@ from Modules.CleanData import get_data
 from Modules.DataBaseFlow import *
 
 def Analysis_free():
-    st.write(st.session_state)
+
     # Sidebar components for user input
     st.sidebar.title("Choose data parameters")
 

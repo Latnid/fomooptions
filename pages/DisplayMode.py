@@ -36,7 +36,7 @@ def sign_in_button_status():
     st.session_state.sign_in_button_clicked = True
 
 #Connect DB to check user status:
-login_status,premium_group = login_control(method= "login_status", user_hash = user_hash)
+login_status_user_hash,login_status_user_cookies, premium_group = login_control(method= "login_status", user_hash = user_hash)
 
 def sign_out_button():
     if st.sidebar.button("Sign out"):
@@ -45,15 +45,15 @@ def sign_out_button():
         st.experimental_rerun()
 
 #Load base on login status:
-if login_status and premium_group == "F/S Premium":
+if login_status_user_hash and login_status_user_cookies and premium_group == "F/S Premium":
     Display_premium()
     st.sidebar.markdown("<h3 style='color: darkgreen;'>F/S Premium Member</h3>", unsafe_allow_html=True)
     sign_out_button()
-elif login_status and premium_group == "F/S Basic":
+elif login_status_user_hash and login_status_user_cookies and premium_group == "F/S Basic":
     Display_basic()
     st.sidebar.markdown("<h3 style='color: darkgreen;'>F/S Basic Member</h3>", unsafe_allow_html=True)
     sign_out_button()
-elif login_status and premium_group == None:
+elif login_status_user_hash and login_status_user_cookies and premium_group == None:
     #Login as FreeTier Access 
     #Analysis_free_member()
     st.sidebar.markdown("<h3 style='color: darkgreen;'>F/S Free Member</h3>", unsafe_allow_html=True)

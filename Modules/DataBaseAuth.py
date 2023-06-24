@@ -4,6 +4,8 @@ import psycopg2
 from datetime import datetime,timedelta
 import pytz
 import traceback
+from Modules.AuthorControlAttach import cookies_manager
+import traceback
 
 
 
@@ -23,7 +25,7 @@ def connect_data_base(database=SQL_DB, user=SQL_USER, password=SQL_PASSWORD, hos
     return con, cur
 
 #Login
-def login_control(method, user_hash, user_email = None, user_group = None, premium_group = None):
+def login_control(method, user_hash, user_cookies = None, user_email = None, user_group = None, premium_group = None, ):
 
     try:
         #connect db
@@ -38,7 +40,7 @@ def login_control(method, user_hash, user_email = None, user_group = None, premi
             ny_time = datetime.now(ny_timezone)
             # Create table if not esists,
             cur.execute(
-            "CREATE TABLE IF NOT EXISTS %s (create_time TIMESTAMPTZ, user_hash TEXT, user_email TEXT, user_group TEXT, premium_group TEXT);" %verifier_table_name)
+            "CREATE TABLE IF NOT EXISTS %s (create_time TIMESTAMPTZ, user_hash TEXT, user_cookies TEXT, user_email TEXT, user_group TEXT, premium_group TEXT);" %verifier_table_name)
             # excute SQL command
             con.commit()
             
@@ -52,10 +54,10 @@ def login_control(method, user_hash, user_email = None, user_group = None, premi
                 
             query = """
                 DELETE FROM login_status
-                WHERE user_email = %s AND (create_time, user_hash) NOT IN (
-                    SELECT create_time, user_hash
+                WHERE user_email = %s AND (create_time, user_cookies) NOT IN (
+                    SELECT create_time, user_cookies
                     FROM (
-                        SELECT create_time, user_hash,
+                        SELECT create_time, user_cookies,
                             ROW_NUMBER() OVER (ORDER BY create_time DESC) AS row_num
                         FROM login_status
                         WHERE user_email = %s
@@ -67,39 +69,35 @@ def login_control(method, user_hash, user_email = None, user_group = None, premi
             con.commit()
 
             # Insert all data to database and excute.  
-            cur.execute("INSERT INTO {} (create_time,user_hash,user_email, user_group, premium_group) VALUES (%s,%s,%s,%s,%s)".format(verifier_table_name),
-            (ny_time, user_hash, user_email, user_group, premium_group))
+            cur.execute("INSERT INTO {} (create_time, user_hash, user_cookies, user_email, user_group, premium_group) VALUES (%s,%s,%s,%s,%s,%s)".format(verifier_table_name),
+            (ny_time, user_hash, user_cookies, user_email, user_group, premium_group))
             # excute query
             con.commit()
 
+
         elif method == 'login_status':
-            #Select the User_hash matched record
-            cur.execute(
-                "SELECT user_hash FROM login_status WHERE user_hash = '{}'".format(user_hash)
-            )
-            if cur.rowcount>0: #Found the user_hash in the table
+            #check user_hash, user_cookies, premium_group
+            cur.execute("SELECT user_hash, user_cookies, premium_group FROM login_status WHERE user_hash = %s", (user_hash,))
+            if cur.rowcount > 0: # Found the user_hash in the table
                 row = cur.fetchone()
-                user_hash_db = row[0]
+                user_hash_db, user_cookies, premium_group_db = row[:3]
                 if user_hash == user_hash_db:
-                    #continute check premium group
-                    cur.execute(
-                        "SELECT premium_group FROM login_status WHERE user_hash = '{}'".format(user_hash)
-                    )
-                    if cur.rowcount>0: #Found the user_hash in the table
-                        row = cur.fetchone()
-                        premium_group_db = row[0]                    
-                    return True,premium_group_db
+                    if cookies_manager(method="Login_status", login_cookies_from_db=user_cookies, key = 'db_login_status'):
+                        return True, True, premium_group_db
+                    else:
+                        return True, False, None
                 else:
-                    premium_group_db = None 
-                    return False , premium_group_db
+                    return False, False, None
             else:
-                return False, None
-                
+                return False, False, None            
+            
         elif method == "logout":
             #Delete record ceated previously with the user_hash
             cur.execute("DELETE FROM {} WHERE user_hash = %s".format(verifier_table_name), (user_hash,))
             # excute query
-            con.commit()             
+            con.commit()
+            #Delete cookies:
+            cookies_manager(method= "Logout", key = 'db_logout')             
  
     except Exception as e:
         # 发生异常时记录错误信息

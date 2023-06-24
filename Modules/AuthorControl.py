@@ -1,28 +1,20 @@
 import streamlit as st
 import requests
-import hashlib
 import random
 import os
 import re
 import time
 from dotenv import load_dotenv
-from streamlit.web.server.websocket_headers import _get_websocket_headers
+import hashlib
+import extra_streamlit_components as stx
+
+
 from Modules.DataBaseAuth import *
+from Modules.AuthorControlAttach import cookies_manager, get_user_hash
+import datetime
+
 
 load_dotenv()
-
-# Define function to get user fingerprint info
-def get_user_hash():
-    try:
-        user_agent = _get_websocket_headers()["User-Agent"]
-        user_hash = hashlib.sha256((user_agent).encode()).hexdigest()
-        return user_hash
-    
-    except Exception as e:
-        # 发生异常时记录错误信息
-        error_message = traceback.format_exc()
-        with open("Hash_error_log.txt", "a") as file:
-            file.write(f"Error in get_user_hash function:\n{error_message}\n")
 
 # Define function to create and verify password
 def auth_password(method, user_input_password=None, generated_password=None):
@@ -134,11 +126,10 @@ def Login():
                 if auth_password('verify_password', user_input_password, st.session_state.generated_sent_password):
                     # Insert database
                     st.success("Welcome Back!")
-                    login_control(method="login_success", user_hash=get_user_hash(), user_email=user_email,
-                                user_group=st.session_state.user_group, premium_group = st.session_state.premium_group)
-
                     
-
+                    login_control(method="login_success", user_hash=get_user_hash(), user_email=user_email, user_group=st.session_state.user_group,
+                                premium_group = st.session_state.premium_group,
+                                user_cookies = cookies_manager(method = "Login_success", user_email = user_email, key = 'db_login_success'))           
 
                     # Autorefresh after signed in successfully
                     st.experimental_rerun()

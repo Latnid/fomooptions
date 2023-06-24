@@ -14,6 +14,9 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+#st.write(_get_websocket_headers())
+#st.write(st.session_state)
+
 # 隐藏页脚，右上角菜单，减少页头空间。
 hide_streamlit_style = """
     <style>
@@ -27,7 +30,7 @@ hide_streamlit_style = """
     </style>
     """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
+st.write(st.session_state)
 # Add content to the sidebar
 st.sidebar.markdown("<h1><a href='https://links.fomostop.com/join' style='text-decoration:none;'>FOMOSTOP</a></h1>", unsafe_allow_html=True)
 st.sidebar.write("A daily analysis of options flow.")
@@ -37,8 +40,8 @@ def sign_in_button_status():
     st.session_state.sign_in_button_clicked = True
     
 #Connect DB to check user status:
-login_status,premium_group = login_control(method= "login_status", user_hash = user_hash)
-
+login_status_user_hash,login_status_user_cookies, premium_group = login_control(method= "login_status", user_hash = user_hash)
+st.sidebar.write(login_status_user_hash,login_status_user_cookies, premium_group)
 def sign_out_button():
     if st.sidebar.button("Sign out"):
         login_control(method = "logout", user_hash = get_user_hash())
@@ -46,15 +49,15 @@ def sign_out_button():
         st.experimental_rerun()
 
 #Load base on login status:
-if login_status and premium_group == "F/S Premium":
+if login_status_user_hash and login_status_user_cookies and premium_group == "F/S Premium":
     Analysis_premium()
     st.sidebar.markdown("<h3 style='color: darkgreen;'>F/S Premium Member</h3>", unsafe_allow_html=True)
     sign_out_button()
-elif login_status and premium_group == "F/S Basic":
+elif login_status_user_hash and login_status_user_cookies and premium_group == "F/S Basic":
     Analysis_basic()
     st.sidebar.markdown("<h3 style='color: darkgreen;'>F/S Basic Member</h3>", unsafe_allow_html=True)
     sign_out_button()
-elif login_status and premium_group == None:
+elif login_status_user_hash and login_status_user_cookies and premium_group == None:
     #Login as FreeTier Access 
     Analysis_free_member()
     st.sidebar.markdown("<h3 style='color: darkgreen;'>F/S Free Member</h3>", unsafe_allow_html=True)
