@@ -28,9 +28,9 @@ def cookies_manager(method, user_email = None, login_cookies_from_db = None, key
         elif method == "Login_status":
             value = cookie_manager.get(cookie=cookie_key)
             if value and login_cookies_from_db == value:
-                return True
+                return True, value
             else:
-                return False
+                return False, value
         elif method == "Logout":
             cookie_manager.delete(cookie_key)
     except Exception as e:

@@ -125,13 +125,15 @@ def Login():
             if st.form_submit_button("Log In"):
                 if auth_password('verify_password', user_input_password, st.session_state.generated_sent_password):
                     # Insert database
-                    st.success("Welcome Back!")
+                    st.success("Welcome Back! Fetching data.....")
+                    st.balloons()
                     
                     login_control(method="login_success", user_hash=get_user_hash(), user_email=user_email, user_group=st.session_state.user_group,
                                 premium_group = st.session_state.premium_group,
                                 user_cookies = cookies_manager(method = "Login_success", user_email = user_email, key = 'db_login_success'))           
 
-                    # Autorefresh after signed in successfully
+                    # Autorefresh after signed in successfully,wait 1s let all the login process done.
+                    time.sleep(3)
                     st.experimental_rerun()
                 else:
                     st.error("Invaild passcode!")
