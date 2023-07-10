@@ -133,19 +133,9 @@ def Display_basic():
 
         time_selected = table_timestamps[formatted_table_timestamps.index(time_selected_formatted)]
 
-        # 定义回调函数，用于处理st.session['ticker_selected']
-        def ticker_select():
-            st.session_state['ticker_selected'] = st.session_state.ticker_sel
-
-        def ticker_init():
-            st.session_state['ticker_selected'] = st.session_state.ticker_init
-
         # 获取选定时间和数据类型的所有ticker
 
         option_change, last_update_time, _ = database_rw(operation='read', date=selected_date.strftime("%m-%d-%Y"), types=selected_data_type, BDTE = selected_data_period_begin, EDTE=selected_data_period_end, time=time_selected)
-
-        # 获取所有的ticker选项，用于循环显示图表
-        ticker_options = option_change['Symbol'].unique()
 
         # 按OI流量排序并选择前X个ticker
         sorted_tickers = option_change.groupby('Symbol')['Open Int'].sum().sort_values(ascending=False).index[:selected_top_tickers]

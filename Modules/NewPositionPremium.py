@@ -1,14 +1,12 @@
-import os
+import numpy as np
 from datetime import datetime
 import pytz
 import pandas as pd
 import streamlit as st
 import holoviews as hv
-#import hvplot.pandas
-from Modules.CleanData import get_data
 from Modules.DataBaseFlow import *
 
-def Display_premium():
+def New_position_premium():
     # Sidebar components for user input
     st.sidebar.title("Choose data parameters")
 
@@ -36,15 +34,6 @@ def Display_premium():
         selected_data_type = st.sidebar.selectbox("Select data type",['stocks','etfs'], key = 'selected_type_init',on_change= type_init_display)
     else:
         selected_data_type = st.sidebar.selectbox("Select data type", ['stocks','etfs'], key = 'selected_data_type',on_change= type_select_display, index=  ['stocks','etfs'].index(st.session_state['selected_type']) )
-    #selected_data_type = st.sidebar.selectbox("Select data type", ["stocks", "etfs"],key = 'selected_data_type_display')
-    selected_top_tickers = st.sidebar.text_input("Top X tickers by OI flow", value="10", key = 'selected_top_tickers_display')
-
-    # 防止用户输入非法字符
-    try:
-        selected_top_tickers = int(selected_top_tickers)
-    except ValueError:
-        selected_top_tickers = 10
-
 
     table_timestamps = None
 
@@ -134,22 +123,48 @@ def Display_premium():
         time_selected = table_timestamps[formatted_table_timestamps.index(time_selected_formatted)]
 
         # 获取选定时间和数据类型的所有ticker
-
         option_change, last_update_time, _ = database_rw(operation='read', date=selected_date.strftime("%m-%d-%Y"), types=selected_data_type, BDTE = selected_data_period_begin, EDTE=selected_data_period_end, time=time_selected)
 
         # 按OI流量排序并选择前X个ticker
-        sorted_tickers = option_change.groupby('Symbol')['Open Int'].sum().sort_values(ascending=False).index[:selected_top_tickers]
-        sorted_option_change = option_change[option_change['Symbol'].isin(sorted_tickers)]
+        option_change['strike OI'] = option_change.groupby(['Symbol', 'Strike'])['Open Int'].transform('sum')
+        option_change['strike OI Chg'] = option_change.groupby(['Symbol', 'Strike'])['OI Chg'].transform('sum')
+        # 计算相对差异
+        option_change['OI Diff'] = np.abs(option_change['strike OI'] - option_change['strike OI Chg'])
+
+        # 计算OI相似度百分比
+        max_oi = option_change[['strike OI', 'strike OI Chg']].max(axis=1)
+        oi_similarity = 1 - (option_change['OI Diff'] / max_oi)
+
+        #定义回调函数，用于处理st.session['similarity_threshold']
+        def similarity_threshold_select():
+            st.session_state['similarity_threshold'] = st.session_state.similarity_threshold_select
+
+        def similarity_threshold_init():
+            st.session_state['similarity_threshold'] = st.session_state.similarity_threshold_init
+        # 设置阈值，用于确定数量接近的行
+        if 'similarity_threshold' not in st.session_state:
+            similarity_threshold = st.sidebar.slider('New position accuracy threshold',min_value=0.1, max_value= 1.0, value=0.8, step=0.1, format = '%f',on_change = similarity_threshold_init, key= "similarity_threshold_init", help="Determines the accuracy rate of identifying initial opening positions based on the similarity between OI and OI Chg (range 0-1). A higher threshold indicates a higher accuracy rate in identifying initial opening positions.")  # 根据需求调整阈值
+        else:
+            similarity_threshold = st.sidebar.slider('New position accuracy threshold',min_value=0.1, max_value= 1.0, value=st.session_state['similarity_threshold'], step=0.1, format = '%f',on_change = similarity_threshold_select, key= "similarity_threshold_select", help="Determines the accuracy rate of identifying initial opening positions based on the similarity between OI and OI Chg (range 0-1). A higher threshold indicates a higher accuracy rate in identifying initial opening positions.")
+
+        # 使用np.where将百分比相似度大于阈值的行标记为1，否则标记为0
+        option_change['Similar Rows'] = np.where(oi_similarity > similarity_threshold, 1, 0)
+
+        #去除Similar Rows下被标记为0的项目
+        new_position_df = option_change[option_change['Similar Rows']== 1]
+        st.write(new_position_df)
+
+        #获取new_position_df含有的所有ticker，用于循环显示图表
+        new_position_tickers = new_position_df['Symbol'].unique()
 
         # 设置图表标题
         chart_title = f"options expiration range: {selected_data_period_begin} to {selected_data_period_end}            options.fomostop.com"
 
         # 在同一个页面显示选定的ticker的图表
-        for ticker in sorted_tickers:
+        for ticker in new_position_tickers:
             # Open Int call put in one ticker
-            plot_one_tickerOI = sorted_option_change[sorted_option_change['Symbol'] == ticker].hvplot.bar(
+            plot_one_tickerOI = new_position_df[new_position_df['Symbol'] == ticker].hvplot.bar(
                 by='Type',
-                #hue=["Call", "Put"],
                 color=['#0AA638', '#FF5635'],
                 x='Strike',
                 y='Open Int',
@@ -164,11 +179,10 @@ def Display_premium():
             )
 
             # Open Int call put in one ticker
-            plot_one_tickerOI_change = sorted_option_change[sorted_option_change['Symbol'] == ticker].hvplot.bar(
+            plot_one_tickerOI_change = new_position_df[new_position_df['Symbol'] == ticker].hvplot.bar(
                 x='Strike',
                 y='OI Chg',
                 by='Type',
-                #hue=["Call", "Put"],
                 color=['#0AA638', '#FF5635'],
                 stacked=False,
                 height=280,
@@ -179,9 +193,9 @@ def Display_premium():
                 xlabel='Tickers by Call and Put',
                 ylabel='Open Interest Change',
                 title = f"Open Interest Change - Ticker: {ticker} - Updated:{last_update_time} - {chart_title}",
-                
             )
 
+            
             # 在Streamlit应用程序中显示图表
             st.bokeh_chart(hv.render(plot_one_tickerOI, backend="bokeh",))
             st.bokeh_chart(hv.render(plot_one_tickerOI_change, backend="bokeh"))
