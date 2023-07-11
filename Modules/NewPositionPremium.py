@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 import holoviews as hv
 from Modules.DataBaseFlow import *
+st.elements.utils._shown_default_value_warning=True # Remove the duplicate widget value set warning
 
 def New_position_premium():
     # Sidebar components for user input

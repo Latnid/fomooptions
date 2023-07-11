@@ -45,6 +45,7 @@ def get_data(date,types,DTE):
         
         #Sorted by orders 'Symbol','Type','Strike','Open Int','Volume','OI Chg','IV'.
         combine_sort_df = combine_min_DTE.sort_values(['Symbol','Type','Strike','Open Int','Volume','OI Chg','IV'])
+        combine_sort_df.columns = ['Symbol','Price','Type','Strike','Exp Date','DTE','Bid','Midpoint','Ask','Last','Volume','Open Int','OI Chg','IV','Time']
         
         # return data
         return combine_sort_df
