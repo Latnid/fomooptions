@@ -78,6 +78,7 @@ def Login():
                 if response.status_code == 200:
                     #Found user sign
                     st.session_state.user_found = True
+                    st.session_state['user_email_db'] = user_email #Update User email to sessionstate, avoid blank email log in bug when user switch the page.
 
                     data = response.json()
                     if data:
@@ -128,9 +129,9 @@ def Login():
                     st.success("Welcome Back! Fetching data.....")
                     st.balloons()
                     
-                    login_control(method="login_success", user_hash=get_user_hash(), user_email=user_email, user_group=st.session_state.user_group,
+                    login_control(method="login_success", user_hash=get_user_hash(), user_email=st.session_state['user_email_db'], user_group=st.session_state.user_group,
                                 premium_group = st.session_state.premium_group,
-                                user_cookies = cookies_manager(method = "Login_success", user_email = user_email, key = 'db_login_success'))           
+                                user_cookies = cookies_manager(method = "Login_success", user_email = st.session_state['user_email_db'], key = 'db_login_success'))           
 
                     # Autorefresh after signed in successfully,wait 1s let all the login process done.
                     time.sleep(3)

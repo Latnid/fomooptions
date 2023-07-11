@@ -76,9 +76,8 @@ def login_control(method, user_hash, user_cookies = None, user_email = None, use
 
 
         elif method == 'login_status':
-            
             #check user_hash, user_cookies, premium_group
-            cur.execute("SELECT user_hash, user_cookies, premium_group FROM login_status WHERE user_hash = %s", (user_hash,))
+            cur.execute("SELECT user_hash, user_cookies, premium_group FROM login_status WHERE user_cookies = %s", (user_cookies,))
             if cur.rowcount > 0: # Found the user_hash in the table
                 row = cur.fetchone()
                 user_hash_db, user_cookies_db, premium_group_db = row[:3]
@@ -90,9 +89,9 @@ def login_control(method, user_hash, user_cookies = None, user_email = None, use
                     else:
                         return True, False,user_cookies_db, user_hash_db,"User_hash not match"
                 else:
-                    return False, False, None, None,"2"
+                    return False, False, None, None, "2"
             else:
-                return False, False, None, None, "1"                
+                return False, False, None, None, "1"                        
             
         elif method == "logout":
             #Delete record ceated previously with the user_hash
