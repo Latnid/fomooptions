@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 import psycopg2
-from datetime import datetime,timedelta
+from datetime import datetime
 import pytz
 import traceback
 from Modules.AuthorControlAttach import cookies_manager

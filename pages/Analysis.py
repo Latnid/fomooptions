@@ -44,16 +44,16 @@ try:
         
     #Connect DB to check user status:
     cookie_check,user_hash_check,user_cookies_val_db,user_hash_val_db, premium_group = login_control(method= "login_status", user_hash = user_hash, user_cookies= user_cookies)
-    st.sidebar.markdown(
-        f'cookies_check: {cookie_check}<br>'
-        f'cookies_db: {user_cookies_val_db}<br>'
-        f'cookies_user: {user_cookies}<br>'
-        f'hash_check: {user_hash_check}<br>'
-        f'hash_db: {user_hash_val_db}<br>'
-        f'user_hash: {user_hash}<br>'
-        f'pgroup: {premium_group}',
-        unsafe_allow_html=True
-    )
+    # st.sidebar.markdown(
+    #     f'cookies_check: {cookie_check}<br>'
+    #     f'cookies_db: {user_cookies_val_db}<br>'
+    #     f'cookies_user: {user_cookies}<br>'
+    #     f'hash_check: {user_hash_check}<br>'
+    #     f'hash_db: {user_hash_val_db}<br>'
+    #     f'user_hash: {user_hash}<br>'
+    #     f'pgroup: {premium_group}',
+    #     unsafe_allow_html=True
+    # )
 
     def sign_out_button():
         if st.sidebar.button("Sign out"):

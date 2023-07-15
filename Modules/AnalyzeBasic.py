@@ -4,8 +4,6 @@ import pytz
 import pandas as pd
 import streamlit as st
 import holoviews as hv
-import hvplot.pandas
-from Modules.CleanData import get_data
 from Modules.DataBaseFlow import *
 st.elements.utils._shown_default_value_warning=True # Remove the duplicate widget value set warning
 

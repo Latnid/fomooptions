@@ -5,8 +5,6 @@ import os
 import re
 import time
 from dotenv import load_dotenv
-import hashlib
-import extra_streamlit_components as stx
 
 
 from Modules.DataBaseAuth import *
@@ -134,7 +132,7 @@ def Login():
                                 user_cookies = cookies_manager(method = "Login_success", user_email = st.session_state['user_email_db'], key = 'db_login_success'))           
 
                     # Autorefresh after signed in successfully,wait 1s let all the login process done.
-                    time.sleep(3)
+                    time.sleep(1)
                     st.experimental_rerun()
                 else:
                     st.error("Invaild passcode!")

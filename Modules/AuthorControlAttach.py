@@ -1,9 +1,15 @@
-import streamlit as st
-import hashlib
-import datetime
-import extra_streamlit_components as stx
-from streamlit.web.server.websocket_headers import _get_websocket_headers
-import traceback
+try:
+    import streamlit as st
+    import hashlib
+    import datetime
+    import extra_streamlit_components as stx
+    from streamlit.web.server.websocket_headers import _get_websocket_headers
+    import traceback
+except Exception as e:
+    # 发生异常时记录错误信息
+    error_message = traceback.format_exc()
+    with open("login_control_error_log.txt", "a") as file:
+        file.write(f"Error in login_control function:\n{error_message}\n") 
 
 
 
@@ -36,8 +42,8 @@ def cookies_manager(method, user_email = None, login_cookies_from_db = None, key
     except Exception as e:
         # 发生异常时记录错误信息
         error_message = traceback.format_exc()
-        with open("login_control_error_log.txt", "a") as file:
-            file.write(f"Error in login_control function:\n{error_message}\n") 
+        with open("Cookies_control_error_log.txt", "a") as file:
+            file.write(f"Error in cookies_manager function:\n{error_message}\n") 
 
 
 
