@@ -6,6 +6,8 @@ import streamlit as st
 import holoviews as hv
 from Modules.DataBaseFlow import *
 import hvplot.pandas
+
+from bokeh.models import HoverTool
 st.elements.utils._shown_default_value_warning=True # Remove the duplicate widget value set warning
 
 def New_position_premium():
@@ -154,7 +156,31 @@ def New_position_premium():
 
         #去除Similar Rows下被标记为0的项目
         new_position_df = option_change[option_change['Similar Rows']== 1]
-        st.write(new_position_df)
+        #设置Symbol为index
+        new_position_show_df = new_position_df.set_index('Symbol')
+
+        # 自定义函数，根据"Last"和"Midpoint"的关系判断"sentiment"
+        def get_initiator(row):
+            if row['Last'] < row['Bid']:
+                return 'Aggressive Seller'
+            elif row['Last'] > row['Ask']:
+                return 'Aggressive Buyer'
+            elif row['Last'] < row['Midpoint']:
+                return 'Buyer'
+            elif row['Last'] > row['Midpoint']:
+                return 'Seller'
+            else:
+                return 'Neutral'
+        # Add "Initiator" column
+        new_position_show_df['Initiator'] = new_position_show_df.apply(get_initiator, axis=1)
+
+        # 选择所需显示的列
+        selected_columns = ['Price', 'Type', 'Strike', 'DTE', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time',]
+        new_position_show_df = new_position_show_df.loc[:, selected_columns]
+        new_position_show_df.reset_index(inplace = True)
+        
+        #Show DataFrame
+        st.dataframe(new_position_show_df)
 
         #获取new_position_df含有的所有ticker，用于循环显示图表
         new_position_tickers = new_position_df['Symbol'].unique()
@@ -164,43 +190,57 @@ def New_position_premium():
 
         # 在同一个页面显示选定的ticker的图表
         for ticker in new_position_tickers:
+
             # Open Int call put in one ticker
-            plot_one_tickerOI = new_position_df[new_position_df['Symbol'] == ticker].hvplot.bar(
-                by='Type',
-                color=['#0AA638', '#FF5635'],
+            plot_one_tickerOI_change = option_change[option_change['Symbol'] == ticker].hvplot.bar(
                 x='Strike',
                 y='Open Int',
+                color=['#329C97'],
                 yformatter='%0f',
                 xlabel='Tickers by Call and Put',
                 ylabel='Open Interest',
-                title = f'Open Interest Spread - Ticker: {ticker} - Updated:{last_update_time} - {chart_title}',
-                hover_cols=['Strike', 'DTE', 'Last', 'Time'],
+                title = f'NewPosition - Ticker: {ticker} - Updated:{last_update_time} - {chart_title}',
+                hover=False,
                 height=280,
                 width=980,
-                rot=90,
+                rot=90
+            )
+            # Define the formatter for hover tooltip
+            hover=HoverTool(tooltips=[
+                ('Price','@Price'),
+                  ('Type','@Type'),
+                  ('Strike','@Strike'),
+                  ('DTE','@DTE'),
+                  ('Initiator','@Initiator'),
+                  ('Last','@Last{ .2f}'),
+                  ('Volume','@Volume'),
+                  ('Open Int', '@Volume'),
+                  ('OI Chg', '@OI_Chg'), #if original column has space, use '_' instead
+                  ('IV', '@IV'),
+                  ('Time','@Time')
+                ]
             )
 
             # Open Int call put in one ticker
-            plot_one_tickerOI_change = new_position_df[new_position_df['Symbol'] == ticker].hvplot.bar(
+            plot_two_tickerOI_change = new_position_show_df[new_position_show_df['Symbol'] == ticker].hvplot.scatter(
                 x='Strike',
                 y='OI Chg',
-                by='Type',
-                color=['#0AA638', '#FF5635'],
-                stacked=False,
+                size=350,  # Further increase the marker size for better visibility
+                marker='diamond',  # Use a different marker shape (diamond) to differentiate from bars
+                color='#FF5733',  # Choose a more contrasting color (e.g., orange) for the markers
+                hover_cols=['Price', 'Type', 'Strike', 'DTE', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time'],
+                xlabel='Tickers by Call and Put',
+                ylabel='Open Interest',
                 height=280,
                 width=980,
-                yformatter='%0f',
                 rot=90,
-                hover_cols=['Strike', 'DTE', 'Last', 'Time'],
-                xlabel='Tickers by Call and Put',
-                ylabel='Open Interest Change',
-                title = f"Open Interest Change - Ticker: {ticker} - Updated:{last_update_time} - {chart_title}",
+                tools=[hover]
             )
 
+            plot_three_combine = plot_one_tickerOI_change * plot_two_tickerOI_change
             
             # 在Streamlit应用程序中显示图表
-            st.bokeh_chart(hv.render(plot_one_tickerOI, backend="bokeh",))
-            st.bokeh_chart(hv.render(plot_one_tickerOI_change, backend="bokeh"))
+            st.bokeh_chart(hv.render(plot_three_combine, backend="bokeh"))
 
     else:
         st.markdown("[Join our group at pro.Fomostop.com](https://links.fomostop.com/join)")
