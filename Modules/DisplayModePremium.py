@@ -175,7 +175,7 @@ def Display_premium():
                 width=980,
                 yformatter='%0f',
                 rot=90,
-                hover_cols=['Strike', 'DTE', 'Last', 'Time'],
+                hover_cols=['Strike', 'DTE', 'Last', 'Time', 'Initiator', 'IV'],
                 xlabel='Tickers by Call and Put',
                 ylabel='Open Interest Change',
                 title = f"Open Interest Change - Ticker: {ticker} - Updated:{last_update_time} - {chart_title}",

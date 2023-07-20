@@ -160,19 +160,19 @@ def New_position_premium():
         new_position_show_df = new_position_df.set_index('Symbol')
 
         # 自定义函数，根据"Last"和"Midpoint"的关系判断"sentiment"
-        def get_initiator(row):
-            if row['Last'] < row['Bid']:
-                return 'Aggressive Seller'
-            elif row['Last'] > row['Ask']:
-                return 'Aggressive Buyer'
-            elif row['Last'] < row['Midpoint']:
-                return 'Buyer'
-            elif row['Last'] > row['Midpoint']:
-                return 'Seller'
-            else:
-                return 'Neutral'
-        # Add "Initiator" column
-        new_position_show_df['Initiator'] = new_position_show_df.apply(get_initiator, axis=1)
+        # def get_initiator(row):
+        #     if row['Last'] < row['Bid']:
+        #         return 'Aggressive Seller'
+        #     elif row['Last'] > row['Ask']:
+        #         return 'Aggressive Buyer'
+        #     elif row['Last'] < row['Midpoint']:
+        #         return 'Seller'
+        #     elif row['Last'] > row['Midpoint']:
+        #         return 'Buyer'
+        #     else:
+        #         return 'Neutral'
+        # # Add "Initiator" column
+        # new_position_show_df['Initiator2'] = new_position_show_df.apply(get_initiator, axis=1)
 
         # 选择所需显示的列
         selected_columns = ['Price', 'Type', 'Strike', 'DTE', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time',]
@@ -184,7 +184,8 @@ def New_position_premium():
 
         #获取new_position_df含有的所有ticker，用于循环显示图表
         new_position_tickers = new_position_df['Symbol'].unique()
-
+        #排序option_change,用于图表
+        option_change = option_change.sort_values(['Symbol','Strike','Open Int','Volume','OI Chg','IV'])
         # 设置图表标题
         chart_title = f"options expiration range: {selected_data_period_begin} to {selected_data_period_end}            options.fomostop.com"
 

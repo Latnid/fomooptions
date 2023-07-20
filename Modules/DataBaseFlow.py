@@ -39,6 +39,28 @@ def database_rw(operation, date, types, BDTE=None, EDTE=None, csv_time=datetime.
         #write data to database, DTE = 'max' means all the data collected.
         if operation == 'write':
             combine_data = get_data(date, types, DTE = 'max')
+
+            # 自定义函数，根据"Last"和"Midpoint"的关系判断"sentiment"
+            def get_initiator(row):
+                if row['Last'] < row['Bid']:
+                    return 'Aggressive Seller'
+                elif row['Last'] > row['Ask']:
+                    return 'Aggressive Buyer'
+                elif row['Last'] < row['Midpoint']:
+                    return 'Seller'
+                elif row['Last'] > row['Midpoint']:
+                    return 'Buyer'
+                else:
+                    return 'Neutral'
+            # Add "Initiator" column
+            combine_data['Initiator'] = combine_data.apply(get_initiator, axis=1)
+
+            #重新排列，把'Initiator'放在'Last'后：
+            new_order = ['Symbol', 'Price', 'Type', 'Strike', 'Exp Date', 'DTE', 'Bid', 'Midpoint', 'Ask', 'Last', 'Initiator', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time']
+
+            # 使用reindex()方法重新排列列的顺序
+            combine_data = combine_data.reindex(columns=new_order)
+
             #构建写操作的表名
             write_table_name = f"_{date_parts[2]}_{date_parts[0]}_{date_parts[1]}_{types}_{now_timestamp}"  # 按照'YYYY_MM_DD'格式重新排列日期部分
 
@@ -60,6 +82,7 @@ def database_rw(operation, date, types, BDTE=None, EDTE=None, csv_time=datetime.
                 "Midpoint" NUMERIC,
                 "Ask" NUMERIC,
                 "Last" NUMERIC,
+                "Initiator" TEXT,
                 "Volume" NUMERIC,
                 "Open Int" NUMERIC,
                 "OI Chg" NUMERIC,
@@ -135,6 +158,7 @@ def database_rw(operation, date, types, BDTE=None, EDTE=None, csv_time=datetime.
                     "Midpoint": float,
                     "Ask": float,
                     "Last": float,
+                    "Initiator": str,
                     "Volume": float,
                     "Open Int": float,
                     "OI Chg": float,

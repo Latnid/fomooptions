@@ -157,7 +157,7 @@ def Analysis_premium():
 
 
         # Create DataFrame for all the required columns
-        option_change_required = option_change[["Symbol", "Type", "Strike", "DTE", "Open Int", "OI Chg", "Volume", "Price", "IV", "Last", "Time"]]
+        option_change_required = option_change[["Symbol", "Type", "Strike", "DTE", "Open Int", "OI Chg", "Volume", "Price", 'Initiator', 'IV', "Last", "Time"]]
 
         # Sorting step one
         # Groupby Symbol, then calculate the total Open Int, and make it as a new column
@@ -216,7 +216,7 @@ def Analysis_premium():
             width=980,
             yformatter="%0f",
             rot=90,
-            hover_cols=["Strike", "DTE", 'Last', "Time"],
+            hover_cols=["Strike", "DTE", 'Last', "Time", 'Initiator', 'IV'],
             xlabel="Tickers by Call and Put",
             ylabel="Open Interest Change",
             title= f"Open Interests Change - Updated:{last_update_time} - {chart_title}",
@@ -252,7 +252,7 @@ def Analysis_premium():
             width=980, 
             yformatter='%0f',
             rot=90,
-            hover_cols = ['Strike', 'DTE', 'Last','Time'],
+            hover_cols = ['Strike', 'DTE', 'Last','Time', 'Initiator', 'IV'],
             xlabel='Tickers by Call and Put',
             ylabel = 'Open Interest Change',
             title = f"Open Interest Change - Ticker: {ticker_selected} - Updated:{last_update_time} - {chart_title}"
