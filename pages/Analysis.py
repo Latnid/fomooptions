@@ -32,7 +32,7 @@ try:
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
     # Add content to the sidebar
-    st.sidebar.markdown("<h1><a href='https://links.fomostop.com/join' style='text-decoration:none;'>FOMOSTOP</a></h1>", unsafe_allow_html=True)
+    st.sidebar.markdown("<h1><a href='https://www.fomostop.com/' style='text-decoration:none;'>FOMOSTOP</a></h1>", unsafe_allow_html=True)
     st.sidebar.write("A daily analysis of options flow.")
 
     #Acquire current user broswer cookies and hash
@@ -57,7 +57,7 @@ try:
 
     def sign_out_button():
         if st.sidebar.button("Sign out"):
-            login_control(method = "logout", user_hash = get_user_hash())
+            login_control(method = "logout", user_cookies = user_cookies)
             # Autorefresh after loged out successfully
             st.experimental_rerun()
 
@@ -81,9 +81,11 @@ try:
         if "sign_in_button_clicked" not in st.session_state:
             if st.sidebar.button("Sign in", key= "sign_in", on_click= sign_in_button_status):
                 Login()
+                st.sidebar.markdown("<h4><a href='https://www.fomostop.com/become-a-pro-member/' style='text-decoration:none;'>Get pro access</a></h4>", unsafe_allow_html=True)
 
         elif "sign_in_button_clicked" in st.session_state:
             Login()
+            st.sidebar.markdown("<h4><a href='https://www.fomostop.com/become-a-pro-member/' style='text-decoration:none;'>Get pro access</a></h4>", unsafe_allow_html=True)
 
 except Exception as e:
     # 生成有趣的错误提示

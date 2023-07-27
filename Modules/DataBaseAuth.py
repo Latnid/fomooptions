@@ -25,7 +25,7 @@ def connect_data_base(database=SQL_DB, user=SQL_USER, password=SQL_PASSWORD, hos
     return con, cur
 
 #Login
-def login_control(method, user_hash, user_cookies = None, user_email = None, user_group = None, premium_group = None, ):
+def login_control(method, user_hash = None, user_cookies = None, user_email = None, user_group = None, premium_group = None, ):
 
     try:
         #connect db
@@ -46,7 +46,7 @@ def login_control(method, user_hash, user_cookies = None, user_email = None, use
             
             # Determine the number of records to keep based on the login device
             if premium_group == 'F/S Premium':
-                login_device_count = 3
+                login_device_count = 4
             elif premium_group == 'F/S Basic':
                 login_device_count = 2
             else:
@@ -75,30 +75,47 @@ def login_control(method, user_hash, user_cookies = None, user_email = None, use
             con.commit()
 
 
+        # elif method == 'login_status':
+        #     #check user_hash, user_cookies, premium_group
+        #     cur.execute("SELECT user_hash, user_cookies, premium_group FROM login_status WHERE user_cookies = %s", (user_cookies,))
+        #     if cur.rowcount > 0: # Found the user_hash in the table
+        #         row = cur.fetchone()
+        #         user_hash_db, user_cookies_db, premium_group_db = row[:3]
+        #         #check cookies match or not
+        #         if user_cookies == user_cookies_db:
+        #             #check user hash match or not
+        #             if user_hash == user_hash_db:
+        #                 return True, True,user_cookies_db, user_hash_db,premium_group_db
+        #             else:
+        #                 return True, False,user_cookies_db, user_hash_db,"User_hash not match"
+        #         else:
+        #             return False, False, None, None, "User_cookies not match"
+        #     else:
+        #         return False, False, None, None, "Not able to locate the cookie in DB"
+              
         elif method == 'login_status':
-            #check user_hash, user_cookies, premium_group
+            # Check user_hash, user_cookies, premium_group in the database
             cur.execute("SELECT user_hash, user_cookies, premium_group FROM login_status WHERE user_cookies = %s", (user_cookies,))
-            if cur.rowcount > 0: # Found the user_hash in the table
-                row = cur.fetchone()
-                user_hash_db, user_cookies_db, premium_group_db = row[:3]
-                #check cookies match or not
-                if user_cookies == user_cookies_db:
-                    #check user hash match or not
-                    if user_hash == user_hash_db:
-                        return True, True,user_cookies_db, user_hash_db,premium_group_db
-                    else:
-                        return True, False,user_cookies_db, user_hash_db,"User_hash not match"
+            row = cur.fetchone()
+
+            if row is not None: # Found the user_cookies in the table
+                user_hash_db, user_cookies_db, premium_group_db = row
+
+                # Check user hash match or not
+                if user_hash == user_hash_db:
+                    return True, True, user_cookies_db, user_hash_db, premium_group_db
                 else:
-                    return False, False, None, None, "2"
+                    return True, False, user_cookies_db, user_hash_db, "User_hash not match"
             else:
-                return False, False, None, None, "1"                        
+                return False, False, None, None, "Not able to locate the cookie in DB"
+          
             
         elif method == "logout":
-            #Delete record ceated previously with the user_hash
-            cur.execute("DELETE FROM {} WHERE user_hash = %s".format(verifier_table_name), (user_hash,))
+            #Delete record ceated previously with the user_cookies
+            cur.execute("DELETE FROM {} WHERE user_cookies = %s".format(verifier_table_name), (user_cookies,))
             # excute query
             con.commit()
-            #Delete cookies:
+            #Delete cookies from the user browser:
             cookies_manager(method= "Logout", key = 'db_logout')             
  
     except Exception as e:

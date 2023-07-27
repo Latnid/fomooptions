@@ -7,36 +7,40 @@ import time
 from dotenv import load_dotenv
 from Modules.DataBaseAuth import *
 from Modules.AuthorControlAttach import cookies_manager, get_user_hash
+from PIL import Image
+import time
 
 
 
 load_dotenv()
 
 # Define function to create and verify password
-def auth_password(method, user_input_password=None, generated_password=None):
+def auth_password(method, user_input_password=None, generated_password=None, password_generated_time=None):
     if method == 'generate_password':
         generated_password = str(random.randint(100000, 999999))
-        return generated_password
+        password_generated_time = time.time()
+        return generated_password, password_generated_time
     elif method == 'verify_password':
-        if generated_password == user_input_password:
-            return True
-        else:
-            return False
+        current_time = time.time()
+        if current_time - password_generated_time <= 100: #Allow user to fill in the passcode in 100 seconds.
+            if generated_password == user_input_password:
+                return True
+        return False
 
 def Login():
 
     def generate_send_password():
-        st.session_state.generated_sent_password = auth_password(method='generate_password')
+        st.session_state.generated_sent_password, st.session_state.password_generated_time = auth_password(method='generate_password')
         
 
     with st.sidebar.form("Sign In"):
-        user_email = st.text_input("Input email", key="user_email")
+        user_email = st.text_input("Input Pro account email - [""(Sign up)""](https://links.fomostop.com/join)", key="user_email",)
         user_id = None
         user_group = None
         # Track last sent timestamp，if not exist set 0
         last_sent_timestamp = st.session_state.get("last_sent_timestamp", 0)
 
-        if st.form_submit_button(f"send passcode", on_click=generate_send_password):
+        if st.form_submit_button(f"Send passcode", on_click=generate_send_password):
 
             # Check if email format is valid
             if not re.match(r"[^@]+@[^@]+\.[^@]+", user_email):
@@ -108,6 +112,10 @@ def Login():
 
                         st.success(f"passcode was sent by direct message to your community account")
 
+                        # Display the image
+                        image = Image.open(os.path.join(os.path.dirname(__file__), f'../Static/ReceivePasscode.jpg'))
+                        st.image(image, caption='Check your passcode at pro.fomostop.com')
+
                 elif response.status_code == 404:
                     #user not found
                     st.session_state.user_found = False
@@ -120,7 +128,7 @@ def Login():
             user_input_password = st.text_input("Input passcode", key='user_input_password')
 
             if st.form_submit_button("Log In"):
-                if auth_password('verify_password', user_input_password, st.session_state.generated_sent_password):
+                if auth_password('verify_password', user_input_password, st.session_state.generated_sent_password, st.session_state.password_generated_time):
                     # Insert database
                     st.success("Welcome Back! Fetching data.....")
                     st.balloons()
@@ -133,7 +141,7 @@ def Login():
                     time.sleep(1)
                     st.experimental_rerun()
                 else:
-                    st.error("Invaild passcode!")
+                    st.error("Passcode invalid! (Each passcode is only valid for 100 seconds.)")
         else:
             pass
 
