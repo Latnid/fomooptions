@@ -70,22 +70,24 @@ try:
         Analysis_basic()
         st.sidebar.markdown("<h3 style='color: darkgreen;'>F/S Basic Member</h3>", unsafe_allow_html=True)
         sign_out_button()
+        st.sidebar.markdown("<h1><a href='https://pro.fomostop.com/invitation?code=69A6BG&ref=options.fomostop.com' style='text-decoration:none;'>Upgrade to premium access</a></h4>", unsafe_allow_html=True)
     elif cookie_check and user_hash_check and premium_group == None:
         #Login as FreeTier Access 
         Analysis_free_member()
         st.sidebar.markdown("<h3 style='color: darkgreen;'>F/S Free Member</h3>", unsafe_allow_html=True)
-        sign_out_button() 
+        sign_out_button()
+        st.sidebar.markdown("<h1><a href='https://www.fomostop.com/become-a-pro-member/' style='text-decoration:none;'>Get pro access</a></h4>", unsafe_allow_html=True) 
     else:
         #FreeTier Access
         Analysis_free()
         if "sign_in_button_clicked" not in st.session_state:
             if st.sidebar.button("Sign in", key= "sign_in", on_click= sign_in_button_status):
                 Login()
-                st.sidebar.markdown("<h4><a href='https://www.fomostop.com/become-a-pro-member/' style='text-decoration:none;'>Get pro access</a></h4>", unsafe_allow_html=True)
+            st.sidebar.markdown("<h1><a href='https://www.fomostop.com/become-a-pro-member/' style='text-decoration:none;'>Get pro access</a></h4>", unsafe_allow_html=True)
 
         elif "sign_in_button_clicked" in st.session_state:
             Login()
-            st.sidebar.markdown("<h4><a href='https://www.fomostop.com/become-a-pro-member/' style='text-decoration:none;'>Get pro access</a></h4>", unsafe_allow_html=True)
+            st.sidebar.markdown("<h1><a href='https://www.fomostop.com/become-a-pro-member/' style='text-decoration:none;'>Get pro access</a></h4>", unsafe_allow_html=True)
 
 except Exception as e:
     # 生成有趣的错误提示
