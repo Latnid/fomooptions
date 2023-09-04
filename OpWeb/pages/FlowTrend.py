@@ -4,10 +4,7 @@ try:
     from Modules.DataBaseAuth import *
     from Modules.AuthorControl import *
     from Modules.AnalyzeFree import *
-    from Modules.AnalyzeFreeMember import Analysis_free_member
-    from Modules.AnalyzeBasic import Analysis_basic
-    from Modules.AnalyzePremium import Analysis_premium
-    from Modules.AuthorControlAttach import cookies_manager
+    from Modules.FlowTrendPremium import FlowTrendPremium
 
     # Set page configuration
     st.set_page_config(
@@ -17,8 +14,7 @@ try:
         initial_sidebar_state="expanded",
     )
 
-
-# 隐藏页脚，右上角菜单，减少页头空间。
+    # 隐藏页脚，右上角菜单，减少页头空间。
     hide_streamlit_style = """
         <style>
         #MainMenu {visibility: hidden;}
@@ -36,16 +32,15 @@ try:
     st.sidebar.markdown("<h1><a href='https://options.fomostop.com/' style='text-decoration:none;'>Flow Master</a>  <a href='https://www.fomostop.com/' style='text-decoration:none; font-size: 12px;'>by FOMOSTOP</a></h1>", unsafe_allow_html=True)
     st.sidebar.write("Daily options flow analysis.") 
 
-    # Acquire current user browser cookies and hash
+    #Acquire current user broswer cookies and hash
     _, user_cookies = cookies_manager(method="Login_status")
     user_hash = get_user_hash()
 
     def sign_in_button_status():
         st.session_state.sign_in_button_clicked = True
-
-    # Connect DB to check user status:
-    cookie_check, user_hash_check, user_cookies_val_db, user_hash_val_db, premium_group = login_control(method="login_status", user_hash=user_hash, user_cookies=user_cookies)
-    # st.write(st.session_state)
+        
+    #Connect DB to check user status:
+    cookie_check,user_hash_check,user_cookies_val_db,user_hash_val_db, premium_group = login_control(method= "login_status", user_hash = user_hash, user_cookies= user_cookies)
     # st.sidebar.markdown(
     #     f'cookies_check: {cookie_check}<br>'
     #     f'cookies_db: {user_cookies_val_db}<br>'
@@ -59,38 +54,37 @@ try:
 
     def sign_out_button():
         if st.sidebar.button("Sign out"):
-            login_control(method="logout", user_cookies = user_cookies)
-            # Autorefresh after logged out successfully
+            login_control(method = "logout", user_cookies = user_cookies)
+            # Autorefresh after loged out successfully
             st.experimental_rerun()
 
-    # Load based on login status:
+    #Load base on login status:
     if cookie_check and user_hash_check and premium_group == "F/S Premium":
-        Analysis_premium()
+        FlowTrendPremium()
         st.sidebar.markdown("<h3 style='color: darkgreen;'>F/S Premium Member</h3>", unsafe_allow_html=True)
         sign_out_button()
     elif cookie_check and user_hash_check and premium_group == "F/S Basic":
-        Analysis_basic()
+        st.write("F/S premium member only")
         st.sidebar.markdown("<h3 style='color: darkgreen;'>F/S Basic Member</h3>", unsafe_allow_html=True)
         sign_out_button()
         st.sidebar.markdown("<h1><a href='https://pro.fomostop.com/invitation?code=69A6BG&ref=options.fomostop.com' style='text-decoration:none;'>Upgrade to premium access</a></h4>", unsafe_allow_html=True)
-    elif cookie_check and user_hash_check and premium_group is None:
-        # Login as FreeTier Access
-        Analysis_free_member()
+    elif cookie_check and user_hash_check and premium_group == None:
+        #Login as FreeTier Access 
+        #Analysis_free_member()
         st.sidebar.markdown("<h3 style='color: darkgreen;'>F/S Free Member</h3>", unsafe_allow_html=True)
-        sign_out_button()
+        sign_out_button() 
         st.sidebar.markdown("<h1><a href='https://www.fomostop.com/become-a-pro-member/' style='text-decoration:none;'>Get pro access</a></h4>", unsafe_allow_html=True)
     else:
-        # FreeTier Access
+        #FreeTier Access
         Analysis_free()
         if "sign_in_button_clicked" not in st.session_state:
-            if st.sidebar.button("Sign in", key="sign_in", on_click=sign_in_button_status):
+            if st.sidebar.button("Sign in", key= "sign_in", on_click= sign_in_button_status):
                 Login()
             st.sidebar.markdown("<h1><a href='https://www.fomostop.com/become-a-pro-member/' style='text-decoration:none;'>Get pro access</a></h4>", unsafe_allow_html=True)
-                        
+
         elif "sign_in_button_clicked" in st.session_state:
             Login()
             st.sidebar.markdown("<h1><a href='https://www.fomostop.com/become-a-pro-member/' style='text-decoration:none;'>Get pro access</a></h4>", unsafe_allow_html=True)
-    
 
 except Exception as e:
     # 生成有趣的错误提示
@@ -100,8 +94,9 @@ except Exception as e:
     st.error(error_message)
 
     # 记录错误到本地文档
-    with open("Free_Tier_error_log.txt", "a") as f:
+    with open("FlowTrend_error_log.txt", "a") as f:
         f.write("Error Message:\n")
         f.write(error_message + "\n\n")
         f.write("Error Traceback:\n")
         traceback.print_exc(file=f)
+

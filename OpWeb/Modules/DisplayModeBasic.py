@@ -124,9 +124,9 @@ def Display_basic():
             st.session_state['time_selected'] = st.session_state.time_init_display
 
         if 'time_selected' not in st.session_state or st.session_state['time_selected'] not in table_timestamps:
-            time_selected_formatted = st.sidebar.selectbox('Data time', options=formatted_table_timestamps, key='time_init_display', on_change=time_init_display, disabled=True)
+            time_selected_formatted = st.sidebar.selectbox('Data time snapshots', options=formatted_table_timestamps, key='time_init_display', on_change=time_init_display, disabled=True)
         else:
-            time_selected_formatted = st.sidebar.selectbox('Data time', options=formatted_table_timestamps, key='time_select_display', on_change=time_select_display, index=formatted_table_timestamps.index(st.session_state['time_selected']), disabled=True)
+            time_selected_formatted = st.sidebar.selectbox('Data time snapshots', options=formatted_table_timestamps, key='time_select_display', on_change=time_select_display, index=formatted_table_timestamps.index(st.session_state['time_selected']), disabled=True)
 
         time_selected = table_timestamps[formatted_table_timestamps.index(time_selected_formatted)]
 

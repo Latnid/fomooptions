@@ -150,9 +150,6 @@ def Analysis_free():
         st.sidebar.write(f"Last update: {last_update_time}")
 
 
-
-
-
         # Create DataFrame for all the required columns
         option_change_required = option_change[["Symbol", "Type", "Strike", "DTE", "Open Int", "OI Chg", "Volume", "Price", "IV", "Last", "Time"]]
 

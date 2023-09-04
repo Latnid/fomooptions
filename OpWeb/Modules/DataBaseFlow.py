@@ -11,7 +11,7 @@ import psycopg2
 import psycopg2.extras
 import pandas as pd
 import pytz
-from datetime import datetime
+from datetime import datetime,timedelta
 import traceback
 
 # Load and assign variables.
@@ -30,9 +30,16 @@ def connect_data_base(database=SQL_DB, user=SQL_USER, password=SQL_PASSWORD, hos
     return con, cur
 
 # write/read to database.
-def database_rw(operation, date, types, BDTE=None, EDTE=None, csv_time=datetime.now().timestamp(), time='latest'):
+def database_rw(operation, types, date = None, BDTE=None, EDTE=None, csv_time=datetime.now().timestamp(), time='latest',Bdate = None, Edate = None, tvalue = None, strike = None, exp_date = None, otypes = None, ticker = None):
+    
     now_timestamp = int(csv_time) #时间戳只保留秒（去掉更低的精度，保留整数部分）
-    date_parts = date.split('-')  #分割日期字符串
+
+    #确保功能在需要调用date这个参数的时候才进行，因为有其余无需这个参数的功能，当其余功能没有对date赋值就代表不需要这个参数，该参数保持初始值None
+    if date != None:
+        date_parts = date.split('-')  #分割日期字符串
+    else:
+        pass
+
     con, cur = connect_data_base() #连接数据库
 
     try:
@@ -175,6 +182,83 @@ def database_rw(operation, date, types, BDTE=None, EDTE=None, csv_time=datetime.
 
                 return df, eastern_datetime, table_timestamps
             
+        elif operation == 'read_cross':
+            #配置调整所需参数
+            Bdate = Bdate.strftime("%Y_%m_%d")
+            #增加1天修复数据库不包含Edate当天的问题
+            Edate += timedelta(days=1)
+            Edate = Edate.strftime("%Y_%m_%d")
+            date_format = "_\d{4}_\d{2}_\d{2}_"
+            #转换Exp Date
+            exp_date = exp_date.strftime("%Y-%m-%d")
+
+            # 构建查询字符串
+            query = """
+                SELECT DISTINCT ON (substring(table_name, 2, 10)) table_name
+                FROM information_schema.tables
+                WHERE table_name ~ %s
+                AND table_name >= %s AND table_name <= %s
+                ORDER BY substring(table_name, 2, 10) DESC, table_name DESC;
+            """
+
+            # 执行查询
+            cur.execute(query, (f'{date_format}{types}', f'_{Bdate}', f'_{Edate}'))
+            #获取查询结果到变量
+            latest_daily_table = cur.fetchall()
+            # 获取查询结果并转换为列表
+            latest_daily_tables = [table[0] for table in latest_daily_table]
+
+            # 创建一个空的DataFrame
+            main_df = pd.DataFrame()
+
+            # 针对每个日期的表格进行操作
+            for table_name in latest_daily_tables:
+
+                # 构建查询字符串，用于从表格中提取数据
+                query = f"""
+                    SELECT * FROM {table_name}
+                    WHERE "Symbol" = %s AND "Type" = %s AND "Strike" = %s AND "Exp Date" = %s;
+                """
+
+                # 执行查询并将结果存储到一个DataFrame中
+                cur.execute(query, (ticker, otypes, strike, exp_date))
+                data = cur.fetchall()
+                data = pd.DataFrame(data, columns=["Symbol", "Price", "Type", "Strike", "Exp Date", "DTE", "Bid", "Midpoint", "Ask", "Last", "Initiator", "Volume", "Open Int", "OI Chg", "IV", "Time"])
+
+                # 在数据中添加一个名为 'Date' 的新列，并将日期赋给它
+                data['Date'] = pd.to_datetime(table_name[1:11], format='%Y_%m_%d').strftime('%Y-%m-%d')
+
+                # 将各个列转换为对应格式
+                data = data.astype({
+                    "Symbol": str,
+                    "Price": float,
+                    "Type": str,
+                    "Strike": float,
+                    "Exp Date": str,
+                    "DTE": float,
+                    "Bid": float,
+                    "Midpoint": float,
+                    "Ask": float,
+                    "Last": float,
+                    "Initiator": str,
+                    "Volume": float,
+                    "Open Int": float,
+                    "OI Chg": float,
+                    "IV": float,
+                    "Time": str
+                })
+
+                # 使用round()函数将 'IV' 列保留到小数点后 4 位
+                data['IV'] = data['IV'].round(4)
+
+                # 使用concat函数将数据合并到主DataFrame中
+                main_df = pd.concat([main_df, data])
+                # 现在，main_df 包含了所有日期中满足条件的数据，'Date' 列已经转换为日期格式，'IV' 列保留到小数点后 4 位
+
+            main_df.set_index('Date', inplace=True)
+
+
+            return main_df
 
     except Exception as e:
         # 发生异常时记录错误信息

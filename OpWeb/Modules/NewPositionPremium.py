@@ -117,9 +117,9 @@ def New_position_premium():
             st.session_state['time_selected'] = st.session_state.time_init_display
 
         if 'time_selected' not in st.session_state or st.session_state['time_selected'] not in table_timestamps:
-            time_selected_formatted = st.sidebar.selectbox('Data time', options=formatted_table_timestamps, key='time_init_display', on_change=time_init_display)
+            time_selected_formatted = st.sidebar.selectbox('Data time snapshots', options=formatted_table_timestamps, key='time_init_display', on_change=time_init_display)
         else:
-            time_selected_formatted = st.sidebar.selectbox('Data time', options=formatted_table_timestamps, key='time_select_display', on_change=time_select_display, index=formatted_table_timestamps.index(st.session_state['time_selected']))
+            time_selected_formatted = st.sidebar.selectbox('Data time snapshots', options=formatted_table_timestamps, key='time_select_display', on_change=time_select_display, index=formatted_table_timestamps.index(st.session_state['time_selected']))
 
         time_selected = table_timestamps[formatted_table_timestamps.index(time_selected_formatted)]
 
@@ -155,21 +155,6 @@ def New_position_premium():
         new_position_df = option_change[option_change['Similar Rows']== 1]
         #设置Symbol为index
         new_position_show_df = new_position_df.set_index('Symbol')
-
-        # 自定义函数，根据"Last"和"Midpoint"的关系判断"sentiment"
-        # def get_initiator(row):
-        #     if row['Last'] < row['Bid']:
-        #         return 'Aggressive Seller'
-        #     elif row['Last'] > row['Ask']:
-        #         return 'Aggressive Buyer'
-        #     elif row['Last'] < row['Midpoint']:
-        #         return 'Seller'
-        #     elif row['Last'] > row['Midpoint']:
-        #         return 'Buyer'
-        #     else:
-        #         return 'Neutral'
-        # # Add "Initiator" column
-        # new_position_show_df['Initiator2'] = new_position_show_df.apply(get_initiator, axis=1)
 
         # 选择所需显示的列
         selected_columns = ['Price', 'Type', 'Strike', 'DTE', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time',]
