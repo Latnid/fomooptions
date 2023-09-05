@@ -256,7 +256,7 @@ def database_rw(operation, types, date = None, BDTE=None, EDTE=None, csv_time=da
                 # 现在，main_df 包含了所有日期中满足条件的数据，'Date' 列已经转换为日期格式，'IV' 列保留到小数点后 4 位
 
             main_df.set_index('Date', inplace=True)
-
+            main_df.sort_index(inplace=True)
 
             return main_df
 

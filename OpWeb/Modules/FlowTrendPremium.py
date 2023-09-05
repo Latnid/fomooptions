@@ -33,7 +33,7 @@ def FlowTrendPremium():
 
         # 定义两个回调函数，用于处理 st.session['ticker_selected']
         def ticker_select():
-            st.session_state['ticker_selected'] = st.session_state.ticker_selected
+            st.session_state['ticker_selected'] = st.session_state.ticker_selected.upper()
 
         def ticker_init():
             st.session_state['ticker_selected'] = st.session_state.ticker_init
@@ -144,22 +144,6 @@ def FlowTrendPremium():
             selected_data_date_end = st.date_input('Data date end', value=st.session_state['data_date_end'], key="data_date_end", on_change=data_date_end)
 
 
-
-    # #st.write(operation,types,ticker,otype,exp_date,sprice,tvalue,Bdate,Edate)
-    # st.markdown(
-    #     f"data_type: {st.session_state['selected_type']}<br>"
-    #     f"ticker: {st.session_state['ticker_selected']}<br>"
-    #     f"options_type: {st.session_state['options_type']}<br>"
-    #     f"exp_date: {st.session_state['expired_date']}<br>"
-    #     f"strike: {st.session_state['strike_price']}<br>"
-    #     f"target_value: {st.session_state['target_value']}<br>"
-    #     f"Bdate: {st.session_state['data_date_begin']}<br>"
-    #     f"Edate: {st.session_state['data_date_end']}<br>",
-    #     unsafe_allow_html=True
-    # )
-
-    # st.write(st.session_state)
-
     # Call the database_rw function with values from st.session_state
     df = database_rw(
         operation='read_cross',
@@ -175,16 +159,16 @@ def FlowTrendPremium():
 
     # Check if df is None
     if df is not None:
-        st.write(df)
+        st.write(st.session_state)
 
         # 设置图表标题
-        chart_title = f" Ticker: {st.session_state['ticker_selected']} - date range: {st.session_state['data_date_begin']} to {st.session_state['data_date_end']}                  From: options.fomostop.com"
+        chart_title = f"{st.session_state['ticker_selected']} {st.session_state['strike_price']} {st.session_state['options_type']} - Expired date: {st.session_state['expired_date']} - date range: {st.session_state['data_date_begin']} to {st.session_state['data_date_end']}                  From: options.fomostop.com"
         plot_trend1 = df.hvplot.scatter(
                     title = f"FlowTrend of {st.session_state['target_value']} - {chart_title}",
                     y=st.session_state['target_value'],
                     hover_cols=['Price', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time'],
-                    xlabel='Tickers by Call and Put',
-                    ylabel='Open Interest',
+                    xlabel= "Date",
+                    ylabel= f"{st.session_state['target_value']}",
                     height=680,
                     width=980,
                     rot=90,
@@ -194,8 +178,6 @@ def FlowTrendPremium():
         plot_trend2 = df.hvplot.line(
                 y=st.session_state['target_value'],
                 hover_cols=['Price', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time'],
-                xlabel='Tickers by Call and Put',
-                ylabel='Open Interest',
                 height=680,
                 width=980,
                 rot=90,
