@@ -157,7 +157,7 @@ def New_position_premium():
         new_position_show_df = new_position_df.set_index('Symbol')
 
         # 选择所需显示的列
-        selected_columns = ['Price', 'Type', 'Strike', 'DTE', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time',]
+        selected_columns = ['Price', 'Type', 'Strike', 'DTE', 'Exp Date', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time',]
         new_position_show_df = new_position_show_df.loc[:, selected_columns]
         new_position_show_df.reset_index(inplace = True)
         
@@ -194,11 +194,12 @@ def New_position_premium():
                   ('Type','@Type'),
                   ('Strike','@Strike'),
                   ('DTE','@DTE'),
+                  ('Exp Date','@Exp_Date'),
                   ('Initiator','@Initiator'),
                   ('Last','@Last{ .2f}'),
                   ('Volume','@Volume'),
                   ('Open Int', '@Volume'),
-                  ('OI Chg', '@OI_Chg'), #if original column has space, use '_' instead
+                  ('OI Chg', '@OI_Chg'), #if original column has space, use '_' instead!
                   ('IV', '@IV'),
                   ('Time','@Time')
                 ]
@@ -211,7 +212,7 @@ def New_position_premium():
                 size=350,  # Further increase the marker size for better visibility
                 marker='diamond',  # Use a different marker shape (diamond) to differentiate from bars
                 color='#FF5733',  # Choose a more contrasting color (e.g., orange) for the markers
-                hover_cols=['Price', 'Type', 'Strike', 'DTE', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time'],
+                hover_cols=['Price', 'Type', 'Strike', 'DTE', 'Exp Date', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time'],
                 xlabel='Tickers by Call and Put',
                 ylabel='Open Interest',
                 height=280,

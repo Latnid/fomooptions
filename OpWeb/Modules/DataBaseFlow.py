@@ -258,7 +258,11 @@ def database_rw(operation, types, date = None, BDTE=None, EDTE=None, csv_time=da
             main_df.set_index('Date', inplace=True)
             main_df.sort_index(inplace=True)
 
-            return main_df
+            # 添加条件判断，如果主DataFrame为空，则返回只有列名的DataFrame
+            if main_df.empty:
+                return None
+            else:
+                return main_df
 
     except Exception as e:
         # 发生异常时记录错误信息

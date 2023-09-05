@@ -104,10 +104,10 @@ def FlowTrendPremium():
             st.session_state['target_value'] = st.session_state.target_value_init
 
         if 'target_value' not in st.session_state:
-            selected_target_value = st.selectbox('Target Value(y)', ['Volume','Open Int','OI Chg','IV','Bid', 'Midpoint', 'Ask', 'Last'], key = 'target_value_init', on_change=target_value_init)
+            selected_target_value = st.selectbox('Target Value(y)', ['Volume','Open Int','OI Chg','IV', 'Last'], key = 'target_value_init', on_change=target_value_init)
             st.session_state['target_value'] = selected_target_value
         else:
-            selected_target_value = st.selectbox("Target Value(y)", ['Volume','Open Int','OI Chg','IV','Bid', 'Midpoint', 'Ask', 'Last'], key='target_value', on_change= target_value, index=['Volume','Open Int','OI Chg','IV','Bid', 'Midpoint', 'Ask', 'Last'].index(st.session_state['target_value']))
+            selected_target_value = st.selectbox("Target Value(y)", ['Volume','Open Int','OI Chg','IV', 'Last'], key='target_value', on_change= target_value, index=['Volume','Open Int','OI Chg','IV', 'Last'].index(st.session_state['target_value']))
 
 
 
@@ -159,7 +159,7 @@ def FlowTrendPremium():
 
     # Check if df is None
     if df is not None:
-        st.write(st.session_state)
+        st.dataframe(df)
 
         # 设置图表标题
         chart_title = f"{st.session_state['ticker_selected']} {st.session_state['strike_price']} {st.session_state['options_type']} - Expired date: {st.session_state['expired_date']} - date range: {st.session_state['data_date_begin']} to {st.session_state['data_date_end']}                  From: options.fomostop.com"
@@ -187,6 +187,8 @@ def FlowTrendPremium():
 
         # 在Streamlit应用程序中显示图表
         st.bokeh_chart(hv.render(plot_trend, backend="bokeh"))
+    elif df is None:
+        st.info("To see the trending activities of your stocks or ETF options, please input or select the appropriate parameters.😊" )
     else:
         # Handle the case where df is None, for example, display an error message
         st.info("Input or select proper parameters")
