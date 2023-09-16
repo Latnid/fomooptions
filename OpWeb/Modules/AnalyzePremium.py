@@ -25,16 +25,14 @@ def Analysis_premium():
 
     #定义回调函数,用于处理st.session['selected_data_type']
     def type_select():
-        st.session_state['selected_type'] = st.session_state.selected_type
+        st.session_state['selected_type'] = st.session_state.selected_data_type
     def type_init():
         st.session_state['selected_type'] = st.session_state.selected_type_init
 
     if 'selected_type' not in st.session_state:
         selected_data_type = st.sidebar.selectbox("Select data type",['stocks','etfs'], key = 'selected_type_init',on_change= type_init)
     else:
-        selected_data_type = st.sidebar.selectbox("Select data type", ['stocks','etfs'], key = 'selected_data_type',on_change= type_select, index=  ['stocks','etfs'].index(st.session_state['selected_type']) )
-
-    #selected_data_type = st.sidebar.selectbox("Select data type", ["stocks", "etfs"])
+        selected_data_type = st.sidebar.selectbox("Select data type", ['stocks','etfs'], key = 'selected_data_type',on_change= type_select, index= ['stocks','etfs'].index(st.session_state['selected_type']) )
     
     table_timestamps = None
     try:

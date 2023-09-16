@@ -33,7 +33,7 @@ try:
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
     # Add content to the sidebar
-    st.sidebar.markdown("<h1><a href='https://options.fomostop.com/' style='text-decoration:none;'>Flow Master</a>  <a href='https://www.fomostop.com/' style='text-decoration:none; font-size: 12px;'>by FOMOSTOP</a></h1>", unsafe_allow_html=True)
+    st.sidebar.markdown("<h1><a href='https://options.fomostop.com/' style='text-decoration:none;'>FlowMaster</a>  <a href='https://www.fomostop.com/' style='text-decoration:none; font-size: 12px;'>by FOMOSTOP</a></h1>", unsafe_allow_html=True)
     st.sidebar.write("Daily options flow analysis.") 
 
     # Acquire current user browser cookies and hash
@@ -45,7 +45,7 @@ try:
 
     # Connect DB to check user status:
     cookie_check, user_hash_check, user_cookies_val_db, user_hash_val_db, premium_group = login_control(method="login_status", user_hash=user_hash, user_cookies=user_cookies)
-    # st.write(st.session_state)
+    #st.write(st.session_state)
     # st.sidebar.markdown(
     #     f'cookies_check: {cookie_check}<br>'
     #     f'cookies_db: {user_cookies_val_db}<br>'

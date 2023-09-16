@@ -25,7 +25,7 @@ def Analysis_free_member():
 
     #定义回调函数,用于处理st.session['selected_data_type']
     def type_select():
-        st.session_state['selected_type'] = st.session_state.selected_type
+        st.session_state['selected_type'] = st.session_state.selected_data_type
     def type_init():
         st.session_state['selected_type'] = st.session_state.selected_type_init
 

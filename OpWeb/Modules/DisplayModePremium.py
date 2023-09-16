@@ -25,7 +25,7 @@ def Display_premium():
 
     #定义回调函数,用于处理st.session['selected_data_type']
     def type_select_display():
-        st.session_state['selected_type'] = st.session_state.selected_type
+        st.session_state['selected_type'] = st.session_state.selected_data_type
     def type_init_display():
         st.session_state['selected_type'] = st.session_state.selected_type_init
 
