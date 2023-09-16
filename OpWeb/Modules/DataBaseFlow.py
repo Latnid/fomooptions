@@ -255,13 +255,12 @@ def database_rw(operation, types, date = None, BDTE=None, EDTE=None, csv_time=da
                 main_df = pd.concat([main_df, data])
                 # 现在，main_df 包含了所有日期中满足条件的数据，'Date' 列已经转换为日期格式，'IV' 列保留到小数点后 4 位
 
-            main_df.set_index('Date', inplace=True)
-            main_df.sort_index(inplace=True)
-
             # 添加条件判断，如果主DataFrame为空，则返回只有列名的DataFrame
             if main_df.empty:
                 return None
             else:
+                main_df.set_index('Date', inplace=True)
+                main_df.sort_index(inplace=True)                
                 return main_df
 
     except Exception as e:
