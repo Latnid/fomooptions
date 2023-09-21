@@ -41,6 +41,7 @@ try:
         
     #Connect DB to check user status:
     cookie_check,user_hash_check,user_cookies_val_db,user_hash_val_db, premium_group = login_control(method= "login_status", user_hash = user_hash, user_cookies= user_cookies)
+    #st.write(st.session_state)
     # st.sidebar.markdown(
     #     f'cookies_check: {cookie_check}<br>'
     #     f'cookies_db: {user_cookies_val_db}<br>'

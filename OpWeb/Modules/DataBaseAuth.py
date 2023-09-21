@@ -6,6 +6,8 @@ import pytz
 import traceback
 from Modules.AuthorControlAttach import cookies_manager
 import traceback
+import hashlib
+import pandas as pd
 
 
 
@@ -25,7 +27,7 @@ def connect_data_base(database=SQL_DB, user=SQL_USER, password=SQL_PASSWORD, hos
     return con, cur
 
 #Login
-def login_control(method, user_hash = None, user_cookies = None, user_email = None, user_group = None, premium_group = None, ):
+def login_control(method, user_hash = None, user_cookies = None, user_email = None, user_group = None, premium_group = None, data_values = None, clindex = None ):
 
     try:
         #connect db
@@ -73,25 +75,6 @@ def login_control(method, user_hash = None, user_cookies = None, user_email = No
             (ny_time, user_hash, user_cookies, user_email, user_group, premium_group))
             # excute query
             con.commit()
-
-
-        # elif method == 'login_status':
-        #     #check user_hash, user_cookies, premium_group
-        #     cur.execute("SELECT user_hash, user_cookies, premium_group FROM login_status WHERE user_cookies = %s", (user_cookies,))
-        #     if cur.rowcount > 0: # Found the user_hash in the table
-        #         row = cur.fetchone()
-        #         user_hash_db, user_cookies_db, premium_group_db = row[:3]
-        #         #check cookies match or not
-        #         if user_cookies == user_cookies_db:
-        #             #check user hash match or not
-        #             if user_hash == user_hash_db:
-        #                 return True, True,user_cookies_db, user_hash_db,premium_group_db
-        #             else:
-        #                 return True, False,user_cookies_db, user_hash_db,"User_hash not match"
-        #         else:
-        #             return False, False, None, None, "User_cookies not match"
-        #     else:
-        #         return False, False, None, None, "Not able to locate the cookie in DB"
               
         elif method == 'login_status':
             # Check user_hash, user_cookies, premium_group in the database
@@ -108,15 +91,122 @@ def login_control(method, user_hash = None, user_cookies = None, user_email = No
                     return True, False, user_cookies_db, user_hash_db, "User_hash not match"
             else:
                 return False, False, None, None, "Not able to locate the cookie in DB"
-          
-            
+               
         elif method == "logout":
             #Delete record ceated previously with the user_cookies
             cur.execute("DELETE FROM {} WHERE user_cookies = %s".format(verifier_table_name), (user_cookies,))
             # excute query
             con.commit()
             #Delete cookies from the user browser:
-            cookies_manager(method= "Logout", key = 'db_logout')             
+            cookies_manager(method= "Logout", key = 'db_logout')
+        elif method == "user_data_read":
+                # Check user_cookies in the database and fetch user_email
+                cur.execute("SELECT user_email FROM login_status WHERE user_cookies = %s", (user_cookies,))
+                row = cur.fetchone()
+
+                if row is not None:  # Found the user_cookies in the table
+                    user_email = row[0]
+                    return user_email
+                else:
+                    return None  # No user found for the given user_cookies
+        elif method == "user_data_write_user_id":
+            # Generate user_id (hash of user_email)
+            user_id = hashlib.sha256(user_email.encode()).hexdigest()
+
+            # Add user_id column to the login_status table if it doesn't exist
+            cur.execute("ALTER TABLE IF EXISTS login_status ADD COLUMN IF NOT EXISTS user_id TEXT;")
+            con.commit()
+
+            # Update the user_id for the corresponding user_email
+            cur.execute("UPDATE login_status SET user_id = %s WHERE user_email = %s", (user_id, user_email))
+            con.commit()
+        elif method == "cross_list_write":
+            # Find user_id using user_cookies
+            cur.execute("SELECT user_id FROM login_status WHERE user_cookies = %s", (user_cookies,))
+            row = cur.fetchone()
+
+            if row is not None:
+                user_id = row[0]
+
+                # Create a new table with user_id as the table name
+                table_name = 'usid'+ user_id
+
+                # Specify column names and data types manually
+                # Adjust data types as needed for your specific use case
+                columns_definition = (
+                    "index TEXT," 
+                    "types TEXT, "
+                    "ticker TEXT, "
+                    "otypes TEXT, "
+                    "exp_date TEXT, "
+                    "strike FLOAT, "
+                    "tvalue TEXT, "
+                    "bdate TEXT, "
+                    "edate TEXT "    
+                )
+
+
+                # Create the table with columns and specified data types
+                create_table_query = f"CREATE TABLE IF NOT EXISTS {table_name} ({columns_definition})"
+                cur.execute(create_table_query)
+                con.commit()
+
+                # Initialize the new table with values from the data_values dictionary
+                insert_data_query = f"INSERT INTO {table_name} ({', '.join(data_values.keys())}) VALUES ({', '.join(['%s'] * len(data_values))})"
+                cur.execute(insert_data_query, list(data_values.values()))
+                con.commit()
+        elif method == "cross_list_read":
+            # Find user_id using user_cookies
+            cur.execute("SELECT user_id FROM login_status WHERE user_cookies = %s", (user_cookies,))
+            row = cur.fetchone()
+
+            if row is not None:
+                user_id = row[0]
+
+                # Construct the table name
+                table_name = 'usid' + user_id
+
+                # Check if the table exists before executing the query
+                table_exists_query = f"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = %s);"
+                cur.execute(table_exists_query, (table_name,))
+                table_exists = cur.fetchone()[0]
+
+                if table_exists:
+                    # Construct the SELECT query to retrieve all rows from the table
+                    select_query = f"SELECT * FROM {table_name};"
+                    cur.execute(select_query)
+
+                    # Fetch all rows and column names
+                    rows = cur.fetchall()
+                    column_names = [desc[0] for desc in cur.description]
+
+                    # Create a DataFrame with the results
+                    df = pd.DataFrame(rows, columns=column_names)
+
+                    return df
+                else:
+                    # Handle the case where the table does not exist
+                    return None
+            else:
+                # Handle the case where no user_id was found for the given user_cookies
+                return None
+        elif method == "cross_list_delete":
+            # Find user_id using user_cookies
+            cur.execute("SELECT user_id FROM login_status WHERE user_cookies = %s", (user_cookies,))
+            row = cur.fetchone()
+
+            if row is not None:
+                user_id = row[0]
+
+                # Construct the table name
+                table_name = 'usid' + user_id
+
+                # 使用DELETE语句删除行，注意要使用字符串拼接构建SQL查询
+                delete_query = f"DELETE FROM {table_name} WHERE index = %s"
+                cur.execute(delete_query, (clindex,))
+                con.commit()
+
+ 
  
     except Exception as e:
         # 发生异常时记录错误信息
