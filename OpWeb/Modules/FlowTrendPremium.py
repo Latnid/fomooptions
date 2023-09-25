@@ -159,8 +159,6 @@ def FlowTrendPremium():
     ) 
 
 
-
-
     #Acquire current user broswer cookies and hash
     _, user_cookies = cookies_manager(method="Login_status",key = 'flowtrend')
     user_email = login_control(method = "user_data_read", user_cookies = user_cookies)
@@ -277,9 +275,6 @@ def FlowTrendPremium():
             #展示df
             st.write('<h5 style="color: #ff5733;">Data detail:</h5>', unsafe_allow_html=True)
             st.dataframe(df)
-        else:
-            st.info("We are unable to retrieve the data from your input or selected parameters.")
-
     elif df is None:
         st.info("To see the trending activities of your stocks or ETF options, please input or select the appropriate parameters.😊" )
     else:
