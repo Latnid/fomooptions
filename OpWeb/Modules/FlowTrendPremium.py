@@ -125,7 +125,7 @@ def FlowTrendPremium():
 
     with col7:
         if 'data_date_begin' not in st.session_state:
-            selected_data_date_begin = st.date_input('Data date begin', value=pd.Timestamp.now(tz=pytz.timezone('US/Eastern')).date(), key="data_date_begin_init", on_change=data_date_begin_init)
+            selected_data_date_begin = st.date_input('Data date begin', value=pd.Timestamp.now(tz=pytz.timezone('US/Eastern')).date()- pd.DateOffset(months=2), key="data_date_begin_init", on_change=data_date_begin_init)
             st.session_state['data_date_begin'] = selected_data_date_begin
         else:
             selected_data_date_begin = st.date_input('Data date begin', value=st.session_state['data_date_begin'], key="selected_data_date_begin", on_change=data_date_begin)
@@ -167,26 +167,34 @@ def FlowTrendPremium():
 
     #portfolio选择框    
     portfolio_df = login_control(method = "cross_list_read", user_cookies = user_cookies)
-    #Create a Streamlit selectbox to display DataFrame rows as options
-    # 重命名列名
-    portfolio_show_df = portfolio_df.rename(columns={
-        'index': 'Options_summary',
-        'types': 'Type',
-        'ticker': 'Ticker',
-        'otypes': 'Call/Put',
-        'exp_date': 'Exp_date',
-        'strike': 'Strike',
-        'tvalue': 'Target',
-        'bdate': 'Begin_date',
-        'edate': 'End_date'
-    })
-    # 重新设置索引从 1 开始
-    portfolio_show_df.index = range(1, len(portfolio_df) + 1)
-    st.write('<h5 style="color: #ff5733;">Your portfolio:</h5>', unsafe_allow_html=True)
-    st.write(portfolio_show_df)
-    if portfolio_df is not None:
+    if portfolio_df is None or portfolio_df.empty:
+        if df is not None:
+            df['index'] = 'QuickView_Mode'
+            portfolio_df = df
+    if portfolio_df is not None and not portfolio_df.empty:
+        #Create a Streamlit selectbox to display DataFrame rows as options
+        # 重命名列名
+        portfolio_show_df = portfolio_df.rename(columns={
+            'index': 'Options_summary',
+            'types': 'Type',
+            'ticker': 'Ticker',
+            'otypes': 'Call/Put',
+            'exp_date': 'Exp_date',
+            'strike': 'Strike',
+            'tvalue': 'Target',
+
+        })
+        # 重新设置索引从 1 开始
+        portfolio_show_df.index = range(1, len(portfolio_df) + 1)
+
+        #只有在非QuickViewMode的情况下才显示Portfolio
+        if 'index' in portfolio_df and not portfolio_df['index'].eq('QuickView_Mode').any():
+            st.write('<h5 style="color: #ff5733;">Your portfolio:</h5>', unsafe_allow_html=True)
+            st.dataframe(portfolio_show_df)
+        
         # 显示选择框和对应内容
-        selected_row_index = st.sidebar.selectbox("Select from your portfolio:", portfolio_df['index'])
+        st.sidebar.write('-----------------')
+        selected_row_index = st.sidebar.selectbox("Select from your portfolio:", portfolio_df['index'],help='You can add or remove items to manage your portfolio, or you will remain in QuickView mode')
         # 获取DataFrame中的选定行
         selected_row = portfolio_df[portfolio_df['index'] == selected_row_index].iloc[0]
 
@@ -194,16 +202,17 @@ def FlowTrendPremium():
         col9, col10, col11 = st.sidebar.columns(spec=[1,1,1.2])
         with col9:
             if st.button('Show'):
-                # 更新session_state值为选定行的值
-                st.session_state['selected_type'] = selected_row['types']
-                st.session_state['ticker_selected'] = selected_row['ticker']
-                st.session_state['options_type'] = selected_row['otypes']
-                st.session_state['expired_date'] = pd.to_datetime(selected_row['exp_date']).date()# 将日期字段从文本格式转换为日期时间格式
-                st.session_state['strike_price'] = selected_row['strike']
-                st.session_state['target_value'] = selected_row['tvalue']
-                #st.session_state['data_date_end'] = pd.to_datetime(selected_row['edate']).date() # 将日期字段从文本格式转换为日期时间格式,不更新这项因为希望能够保持在最新日期
-                st.session_state['data_date_begin'] = pd.to_datetime(selected_row['bdate']).date()# 将日期字段从文本格式转换为日期时间格式
-                st.experimental_rerun()
+                if 'index' in portfolio_df and not portfolio_df['index'].eq('QuickView_Mode').any():
+                    # 更新session_state值为选定行的值
+                    st.session_state['selected_type'] = selected_row['types']
+                    st.session_state['ticker_selected'] = selected_row['ticker']
+                    st.session_state['options_type'] = selected_row['otypes']
+                    st.session_state['expired_date'] = pd.to_datetime(selected_row['exp_date']).date()# 将日期字段从文本格式转换为日期时间格式
+                    st.session_state['strike_price'] = selected_row['strike']
+                    st.session_state['target_value'] = selected_row['tvalue']
+                    #st.session_state['data_date_end'] = pd.to_datetime(selected_row['edate']).date() # 将日期字段从文本格式转换为日期时间格式,不更新这项因为希望能够保持在最新日期
+                    #st.session_state['data_date_begin'] = pd.to_datetime(selected_row['bdate']).date()# 将日期字段从文本格式转换为日期时间格式
+                    st.experimental_rerun()
 
         with col10:
             # Check if df is None
@@ -215,15 +224,15 @@ def FlowTrendPremium():
                     login_control(method = "user_data_write_user_id", user_email = user_email)
                     #把数据构建成字典然后写入到对应的usid表
                     data_values = {
-                        'index' : f"{st.session_state['ticker_selected']}_{st.session_state['strike_price']}_{st.session_state['options_type']}_{st.session_state['expired_date']}",
+                        'index' : f"{st.session_state['ticker_selected']}_{st.session_state['strike_price']}{st.session_state['options_type'][0]}_{st.session_state['expired_date'].strftime('%y/%m/%d')}_{st.session_state['target_value']}",
                         'types': st.session_state['selected_type'],
                         'ticker': st.session_state['ticker_selected'],
                         'otypes': st.session_state['options_type'],
                         'exp_date': st.session_state['expired_date'],
                         'strike': st.session_state['strike_price'],
                         'tvalue': st.session_state['target_value'],
-                        'Edate': st.session_state['data_date_end'],
-                        'Bdate': st.session_state['data_date_begin']
+                        #'Edate': st.session_state['data_date_end'], #让用户自己选择，默认两个月内
+                        #'Bdate': st.session_state['data_date_begin']
                     }
 
                     login_control(method = "cross_list_write", user_cookies = user_cookies, data_values = data_values)
@@ -236,43 +245,47 @@ def FlowTrendPremium():
                 st.write(selected_row['index'])
                 st.experimental_rerun()
         
-
-
-        # 设置图表标题
-        chart_title = f"{st.session_state['ticker_selected']} {st.session_state['strike_price']} {st.session_state['options_type']} - Expired date: {st.session_state['expired_date']} - date range: {st.session_state['data_date_begin']} to {st.session_state['data_date_end']}                  From: options.fomostop.com"
-        plot_trend1 = df.hvplot.scatter(
-                    title = f"FlowTrend of {st.session_state['target_value']} - {chart_title}",
+        # Check if df is None
+        if df is not None:
+            # 设置图表标题
+            chart_title = f"{st.session_state['ticker_selected']} {st.session_state['strike_price']} {st.session_state['options_type']} - Expired date: {st.session_state['expired_date']} - date range: {st.session_state['data_date_begin']} to {st.session_state['data_date_end']}                  From: options.fomostop.com"
+            plot_trend1 = df.hvplot.scatter(
+                        title = f"FlowTrend of {st.session_state['target_value']} - {chart_title}",
+                        y=st.session_state['target_value'],
+                        hover_cols=['Price', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time'],
+                        xlabel= "Date",
+                        ylabel= f"{st.session_state['target_value']}",
+                        height=680,
+                        width=980,
+                        rot=90,
+                        color='darkgreen',
+                        yformatter="%.2f",
+                    )
+            plot_trend2 = df.hvplot.line(
                     y=st.session_state['target_value'],
                     hover_cols=['Price', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time'],
-                    xlabel= "Date",
-                    ylabel= f"{st.session_state['target_value']}",
                     height=680,
                     width=980,
                     rot=90,
-                    color='darkgreen',
-                    yformatter="%.2f",
                 )
-        plot_trend2 = df.hvplot.line(
-                y=st.session_state['target_value'],
-                hover_cols=['Price', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time'],
-                height=680,
-                width=980,
-                rot=90,
-            )
-        
-        plot_trend = plot_trend1*plot_trend2
+            
+            plot_trend = plot_trend1*plot_trend2
 
-        # 在Streamlit应用程序中显示图表
-        st.bokeh_chart(hv.render(plot_trend, backend="bokeh"))
+            # 在Streamlit应用程序中显示图表
+            st.bokeh_chart(hv.render(plot_trend, backend="bokeh"))
 
-        #展示df
-        st.write('<h5 style="color: #ff5733;">Data detail:</h5>', unsafe_allow_html=True)
-        st.dataframe(df)
+            #展示df
+            st.write('<h5 style="color: #ff5733;">Data detail:</h5>', unsafe_allow_html=True)
+            st.dataframe(df)
+        else:
+            st.info("We are unable to retrieve the data from your input or selected parameters.")
+
     elif df is None:
         st.info("To see the trending activities of your stocks or ETF options, please input or select the appropriate parameters.😊" )
     else:
         # Handle the case where df is None, for example, display an error message
-        st.info("Input or select proper parameters")
+        st.write(df)
+        st.info("To track your stocks or ETF options, just enter or choose the right settings.")
 
 
 

@@ -140,9 +140,8 @@ def login_control(method, user_hash = None, user_cookies = None, user_email = No
                     "otypes TEXT, "
                     "exp_date TEXT, "
                     "strike FLOAT, "
-                    "tvalue TEXT, "
-                    "bdate TEXT, "
-                    "edate TEXT "    
+                    "tvalue TEXT "
+   
                 )
 
 
@@ -160,7 +159,7 @@ def login_control(method, user_hash = None, user_cookies = None, user_email = No
             cur.execute("SELECT user_id FROM login_status WHERE user_cookies = %s", (user_cookies,))
             row = cur.fetchone()
 
-            if row is not None:
+            if row is not None and row[0] is not None:
                 user_id = row[0]
 
                 # Construct the table name
