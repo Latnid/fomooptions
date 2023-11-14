@@ -22,7 +22,11 @@ def get_data(date,types,DTE):
         #read csv files
         increase = pd.read_csv(Path(increase_path))
         decrease = pd.read_csv(Path(decrease_path))
-        
+
+        # Convert 'Strike' column to float64 in the Decrease DataFrame
+        increase[['OI Chg', 'Strike']] = increase[['OI Chg', 'Strike']].replace({',': '', 'unch': '0', r'\*': ''}, regex=True).astype(float)
+        decrease[['OI Chg', 'Strike']] = decrease[['OI Chg', 'Strike']].replace({',': '', 'unch': '0', r'\*': ''}, regex=True).astype(float)
+
         #combine increase and decrease data
         combine_df = increase.merge(decrease, how= 'outer')
         
@@ -37,8 +41,8 @@ def get_data(date,types,DTE):
         #Clean the NA data
         combine_min_DTE = combine_min_DTE.dropna()
         
-        #Transfer column 'OI Chg'datatype from str to float.
-        combine_min_DTE['OI Chg'] = combine_min_DTE['OI Chg'].str.replace(',', '').str.replace('unch', '0').astype(float)
+        # Transfer columns 'OI Chg' and 'Strike' datatype from str to float.
+        combine_min_DTE[['OI Chg', 'Strike']] = combine_min_DTE[['OI Chg', 'Strike']].replace({',': '', 'unch': '0', r'\*': ''}, regex=True).astype(float)
         
         #Transfer column 'IV'datatype from str to float.
         combine_min_DTE['IV'] = combine_min_DTE['IV'].str.replace('%', '').str.replace(',', '').astype(float)/100
