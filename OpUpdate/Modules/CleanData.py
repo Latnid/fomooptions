@@ -49,7 +49,16 @@ def get_data(date,types,DTE):
         
         #Sorted by orders 'Symbol','Type','Strike','Open Int','Volume','OI Chg','IV'.
         combine_sort_df = combine_min_DTE.sort_values(['Symbol','Type','Strike','Open Int','Volume','OI Chg','IV'])
-        combine_sort_df.columns = ['Symbol','Price','Type','Strike','Exp Date','DTE','Bid','Midpoint','Ask','Last','Volume','Open Int','OI Chg','IV','Time']
+        
+        # Rename columns
+        combine_sort_df.columns = ['Symbol', 'Price', 'Type', 'Strike', 'Exp Date', 'DTE', 'Bid', 'Ask', 'Last', 'Volume', 'Open Int', 'OI Chg', 'Delta', 'IV', 'Time']
+
+        # Calculate 'Midpoint' and add the column
+        combine_sort_df['Midpoint'] = (combine_sort_df['Ask'] + combine_sort_df['Bid']) / 2
+
+        # Reorder columns
+        column_order = ['Symbol', 'Price', 'Type', 'Strike', 'Exp Date', 'DTE', 'Bid', 'Midpoint', 'Ask', 'Last', 'Volume', 'Open Int', 'OI Chg', 'Delta', 'IV', 'Time']
+        combine_sort_df = combine_sort_df[column_order]
         
         # return data
         return combine_sort_df

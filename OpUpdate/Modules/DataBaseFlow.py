@@ -56,7 +56,7 @@ def database_rw(operation, date, types, BDTE=None, EDTE=None, csv_time=datetime.
             combine_data['Initiator'] = combine_data.apply(get_initiator, axis=1)
 
             #重新排列，把'Initiator'放在'Last'后：
-            new_order = ['Symbol', 'Price', 'Type', 'Strike', 'Exp Date', 'DTE', 'Bid', 'Midpoint', 'Ask', 'Last', 'Initiator', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time']
+            new_order = ['Symbol', 'Price', 'Type', 'Strike', 'Exp Date', 'DTE', 'Bid', 'Midpoint', 'Ask', 'Last', 'Initiator', 'Volume', 'Open Int', 'OI Chg', 'Delta', 'IV', 'Time']
 
             # 使用reindex()方法重新排列列的顺序
             combine_data = combine_data.reindex(columns=new_order)
@@ -86,6 +86,7 @@ def database_rw(operation, date, types, BDTE=None, EDTE=None, csv_time=datetime.
                 "Volume" NUMERIC,
                 "Open Int" NUMERIC,
                 "OI Chg" NUMERIC,
+                "Delta" NUMERIC,
                 "IV" NUMERIC,
                 "Time" TEXT
             )
