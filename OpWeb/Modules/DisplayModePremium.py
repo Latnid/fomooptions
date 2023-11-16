@@ -152,7 +152,7 @@ def Display_premium():
                 ('Initiator','@Initiator'),
                 ('Last','@Last{ .2f}'),
                 ('Volume','@Volume'),
-                ('Open Int', '@Volume'),
+                ('Open Int', '@Open_Int'),
                 ('OI Chg', '@OI_Chg'), #if original column has space, use '_' instead!
                 ('Delta', '@Delta{ .3ff}'),
                 ('IV', '@IV'),
@@ -167,7 +167,7 @@ def Display_premium():
                 ('DTE','@DTE'),
                 ('Exp Date','@Exp_Date'),
                 ('Last','@Last{ .2f}'),
-                ('Volume','@Volume'),
+                ('Volume','@Open_Int'),
                 ('Open Int', '@Volume'),
                 ('Time','@Time')
             ]

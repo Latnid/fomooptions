@@ -198,7 +198,7 @@ def New_position_premium():
                   ('Initiator','@Initiator'),
                   ('Last','@Last{ .2f}'),
                   ('Volume','@Volume'),
-                  ('Open Int', '@Volume'),
+                  ('Open Int', '@Open_Int'),
                   ('OI Chg', '@OI_Chg'), #if original column has space, use '_' instead!
                   ('Delta', '@Delta{ .3ff}'),
                   ('IV', '@IV'),
