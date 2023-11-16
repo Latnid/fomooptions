@@ -6,6 +6,7 @@ import streamlit as st
 import holoviews as hv
 from Modules.DataBaseFlow import *
 import hvplot.pandas
+from bokeh.models import HoverTool
 st.elements.utils._shown_default_value_warning=True # Remove the duplicate widget value set warning
 
 def Display_premium():
@@ -141,6 +142,37 @@ def Display_premium():
         # 设置图表标题
         chart_title = f"options expiration range: {selected_data_period_begin} to {selected_data_period_end}            options.fomostop.com"
 
+        # Define the formatter for hover_change tooltip
+        hover_change=HoverTool(tooltips=[
+            ('Price','@Price'),
+                ('Type','@Type'),
+                ('Strike','@Strike'),
+                ('DTE','@DTE'),
+                ('Exp Date','@Exp_Date'),
+                ('Initiator','@Initiator'),
+                ('Last','@Last{ .2f}'),
+                ('Volume','@Volume'),
+                ('Open Int', '@Volume'),
+                ('OI Chg', '@OI_Chg'), #if original column has space, use '_' instead!
+                ('Delta', '@Delta{ .3ff}'),
+                ('IV', '@IV'),
+                ('Time','@Time')
+            ]
+        )
+        # Define the formatter for hoverOI tooltip
+        hover_OI=HoverTool(tooltips=[
+            ('Price','@Price'),
+                ('Type','@Type'),
+                ('Strike','@Strike'),
+                ('DTE','@DTE'),
+                ('Exp Date','@Exp_Date'),
+                ('Last','@Last{ .2f}'),
+                ('Volume','@Volume'),
+                ('Open Int', '@Volume'),
+                ('Time','@Time')
+            ]
+        )
+        
         # 在同一个页面显示选定的ticker的图表
         for ticker in sorted_tickers:
             # Open Int call put in one ticker
@@ -154,10 +186,11 @@ def Display_premium():
                 xlabel='Tickers by Call and Put',
                 ylabel='Open Interest',
                 title = f'Open Interest Spread - Ticker: {ticker} - Updated:{last_update_time} - {chart_title}',
-                hover_cols=['Strike', 'DTE', 'Exp Date', 'Last', 'Time'],
+                hover_cols = ["Price",'Strike','DTE', 'Exp Date', 'Last', "Volume", "Open Int", 'Time'],
                 height=280,
                 width=980,
                 rot=90,
+                tools=[hover_OI]
             )
 
             # Open Int call put in one ticker
@@ -172,10 +205,11 @@ def Display_premium():
                 width=980,
                 yformatter='%0f',
                 rot=90,
-                hover_cols=['Strike', 'DTE', 'Exp Date', 'Last', 'Time', 'Initiator', 'IV'],
+                hover_cols = ["Price", "Strike", "DTE", "Exp Date", "Last", "Volume", "Open Int", "Time", "Initiator", "IV", "Delta"],
                 xlabel='Tickers by Call and Put',
                 ylabel='Open Interest Change',
                 title = f"Open Interest Change - Ticker: {ticker} - Updated:{last_update_time} - {chart_title}",
+                tools=[hover_change]
                 
             )
 

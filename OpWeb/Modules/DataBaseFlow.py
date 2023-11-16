@@ -169,9 +169,11 @@ def database_rw(operation, types, date = None, BDTE=None, EDTE=None, csv_time=da
                     "Volume": float,
                     "Open Int": float,
                     "OI Chg": float,
+                    "Delta": float,
                     "IV": float,
                     "Time": str
                 })
+
 
                 # 获取该表最后修改的时间
                 last_modified_timestamp = int(read_table_name.split("_")[-1])
@@ -223,30 +225,16 @@ def database_rw(operation, types, date = None, BDTE=None, EDTE=None, csv_time=da
                 # 执行查询并将结果存储到一个DataFrame中
                 cur.execute(query, (ticker, otypes, strike, exp_date))
                 data = cur.fetchall()
-                data = pd.DataFrame(data, columns=["Symbol", "Price", "Type", "Strike", "Exp Date", "DTE", "Bid", "Midpoint", "Ask", "Last", "Initiator", "Volume", "Open Int", "OI Chg", "IV", "Time"])
+
+                #获取表的列名，给data dataframe
+                column_names = [desc[0] for desc in cur.description]
+                data = pd.DataFrame(data, columns=column_names)
 
                 # 在数据中添加一个名为 'Date' 的新列，并将日期赋给它
                 data['Date'] = pd.to_datetime(table_name[1:11], format='%Y_%m_%d').strftime('%Y-%m-%d')
 
                 # 将各个列转换为对应格式
-                data = data.astype({
-                    "Symbol": str,
-                    "Price": float,
-                    "Type": str,
-                    "Strike": float,
-                    "Exp Date": str,
-                    "DTE": float,
-                    "Bid": float,
-                    "Midpoint": float,
-                    "Ask": float,
-                    "Last": float,
-                    "Initiator": str,
-                    "Volume": float,
-                    "Open Int": float,
-                    "OI Chg": float,
-                    "IV": float,
-                    "Time": str
-                })
+                data = data.astype({col: float for col in data.columns if col not in ["Exp Date", "Date", "Symbol", "Type", "Initiator", "Time"]})
 
                 # 使用round()函数将 'IV' 列保留到小数点后 4 位
                 data['IV'] = data['IV'].round(4)

@@ -105,13 +105,10 @@ def FlowTrendPremium():
             st.session_state['target_value'] = st.session_state.target_value_init
 
         if 'target_value' not in st.session_state:
-            selected_target_value = st.selectbox('Target Value(y)', ['Volume','Open Int','OI Chg','IV', 'Last'], key = 'target_value_init', on_change=target_value_init)
+            selected_target_value = st.selectbox('Target Value(y)', ['Volume','Open Int','OI Chg', "Delta", 'IV', 'Last'], key = 'target_value_init', on_change=target_value_init)
             st.session_state['target_value'] = selected_target_value
         else:
-            selected_target_value = st.selectbox("Target Value(y)", ['Volume','Open Int','OI Chg','IV', 'Last'], key='selected_target_value', on_change= target_value, index=['Volume','Open Int','OI Chg','IV', 'Last'].index(st.session_state['target_value']))
-
-
-
+            selected_target_value = st.selectbox("Target Value(y)", ['Volume','Open Int','OI Chg', "Delta", 'IV', 'Last'], key='selected_target_value', on_change= target_value, index=['Volume','Open Int','OI Chg', "Delta", 'IV', 'Last'].index(st.session_state['target_value']))
 
     # 使用 Streamlit 的 columns 函数创建两列布局给 data_date_begin 和 data_date_end 并排使用
     col7, col8 = st.sidebar.columns(2)
@@ -250,7 +247,7 @@ def FlowTrendPremium():
             plot_trend1 = df.hvplot.scatter(
                         title = f"FlowTrend of {st.session_state['target_value']} - {chart_title}",
                         y=st.session_state['target_value'],
-                        hover_cols=['Price', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time'],
+                        hover_cols=['Price', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Delta', 'Time'],
                         xlabel= "Date",
                         ylabel= f"{st.session_state['target_value']}",
                         height=680,
@@ -261,7 +258,7 @@ def FlowTrendPremium():
                     )
             plot_trend2 = df.hvplot.line(
                     y=st.session_state['target_value'],
-                    hover_cols=['Price', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Time'],
+                    hover_cols=['Price', 'Initiator', 'Last', 'Volume', 'Open Int', 'OI Chg', 'IV', 'Delta', 'Time'],
                     height=680,
                     width=980,
                     rot=90,

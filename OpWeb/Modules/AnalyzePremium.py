@@ -6,6 +6,7 @@ import streamlit as st
 import holoviews as hv
 from Modules.DataBaseFlow import *
 import hvplot.pandas
+from bokeh.models import HoverTool
 st.elements.utils._shown_default_value_warning=True # Remove the duplicate widget value set warning
 
 def Analysis_premium():
@@ -152,7 +153,7 @@ def Analysis_premium():
 
 
         # Create DataFrame for all the required columns
-        option_change_required = option_change[["Symbol", "Type", "Strike", "DTE","Exp Date", "Open Int", "OI Chg", "Volume", "Price", 'Initiator', 'IV', "Last", "Time"]]
+        option_change_required = option_change[["Symbol", "Type", "Strike", "DTE","Exp Date", "Open Int", "OI Chg", "Volume", "Price", 'Initiator', 'IV', "Delta", "Last", "Time"]]
 
         # Sorting step one
         # Groupby Symbol, then calculate the total Open Int, and make it as a new column
@@ -180,8 +181,39 @@ def Analysis_premium():
         
         #Title of the charts
         chart_title = f"options expiration range: {selected_data_period_begin} to {selected_data_period_end}            options.fomostop.com"
+
+        # Define the formatter for hover_change tooltip
+        hover_change=HoverTool(tooltips=[
+            ('Price','@Price'),
+                ('Type','@Type'),
+                ('Strike','@Strike'),
+                ('DTE','@DTE'),
+                ('Exp Date','@Exp_Date'),
+                ('Initiator','@Initiator'),
+                ('Last','@Last{ .2f}'),
+                ('Volume','@Volume'),
+                ('Open Int', '@Volume'),
+                ('OI Chg', '@OI_Chg'), #if original column has space, use '_' instead!
+                ('Delta', '@Delta{ .3ff}'),
+                ('IV', '@IV'),
+                ('Time','@Time')
+            ]
+        )
+        # Define the formatter for hoverOI tooltip
+        hover_OI=HoverTool(tooltips=[
+            ('Price','@Price'),
+                ('Type','@Type'),
+                ('Strike','@Strike'),
+                ('DTE','@DTE'),
+                ('Exp Date','@Exp_Date'),
+                ('Last','@Last{ .2f}'),
+                ('Volume','@Volume'),
+                ('Open Int', '@Volume'),
+                ('Time','@Time')
+            ]
+        )
+
         # Top 20 symbols ranked by total open interest，Call / Put Open Interest comparation
-        
         plot_top20OI = option_change_required_top_20.hvplot.bar(
             height=280,
             width=980,
@@ -193,13 +225,13 @@ def Analysis_premium():
             by="Type",
             #hue=["Call","Put"],
             color=['#FF5635', '#0AA638'], 
-            hover_cols=["Strike", "DTE", "Exp Date", "Last", "Time"],
+            hover_cols=["Price","Strike", "DTE", "Exp Date", "Last", "Volume", "Open Int",  "Time"],
             rot=90,
             title=f"Total Open Interest(Top 20) - Updated:{last_update_time} - {chart_title}",
-            
-            
+            tools=[hover_OI]
 
         )
+
         # Top 20 Open Interest change
         plot_top20OI_chg = option_change_required_top_20.hvplot.bar(
             y="OI Chg",
@@ -211,10 +243,11 @@ def Analysis_premium():
             width=980,
             yformatter="%0f",
             rot=90,
-            hover_cols=["Strike", "DTE", "Exp Date", "Last", "Time", "Initiator", "IV"],
+            hover_cols=["Price", "Strike", "DTE", "Exp Date", "Last", "Volume", "Open Int", "Time", "Initiator", "IV", "Delta"],
             xlabel="Tickers by Call and Put",
             ylabel="Open Interest Change",
             title= f"Open Interests Change - Updated:{last_update_time} - {chart_title}",
+            tools=[hover_change]
         )
 
 
@@ -229,10 +262,11 @@ def Analysis_premium():
             xlabel='Tickers by Call and Put',
             ylabel='Open Interest',
             title = f'Open Interest Spread - Ticker: {ticker_selected} - Updated:{last_update_time} - {chart_title}',
-            hover_cols = ['Strike','DTE', 'Exp Date', 'Last','Time'],
+            hover_cols = ["Price",'Strike','DTE', 'Exp Date', 'Last', "Volume", "Open Int", 'Time'],
             height=280,
             width=980, 
             rot = 90,
+            tools=[hover_OI]
         )
         
         #Open Int call put in one ticker
@@ -247,10 +281,11 @@ def Analysis_premium():
             width=980, 
             yformatter='%0f',
             rot=90,
-            hover_cols = ['Strike', 'DTE', 'Exp Date', 'Last','Time', 'Initiator', 'IV'],
+            hover_cols = ["Price", "Strike", "DTE", "Exp Date", "Last", "Volume", "Open Int", "Time", "Initiator", "IV", "Delta"],
             xlabel='Tickers by Call and Put',
             ylabel = 'Open Interest Change',
-            title = f"Open Interest Change - Ticker: {ticker_selected} - Updated:{last_update_time} - {chart_title}"
+            title = f"Open Interest Change - Ticker: {ticker_selected} - Updated:{last_update_time} - {chart_title}",
+            tools=[hover_change]
         )
 
 
