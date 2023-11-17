@@ -254,7 +254,7 @@ def FlowTrendPremium():
                         width=980,
                         rot=90,
                         color='darkgreen',
-                        yformatter="%.2f",
+                        yformatter='%0.2f',
                     )
             plot_trend2 = df.hvplot.line(
                     y=st.session_state['target_value'],

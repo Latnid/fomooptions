@@ -179,7 +179,7 @@ def New_position_premium():
                 x='Strike',
                 y='Open Int',
                 color=['#329C97'],
-                yformatter='%0f',
+                yformatter='%0.0f',
                 xlabel='Tickers by Call and Put',
                 ylabel='Open Interest',
                 title = f'NewPosition - Ticker: {ticker} - Updated:{last_update_time} - {chart_title}',
