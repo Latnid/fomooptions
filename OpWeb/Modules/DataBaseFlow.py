@@ -1,5 +1,6 @@
 import sys
 import os
+import numpy as np
 
 # 将根目录添加到模块搜索路径中
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -153,6 +154,12 @@ def database_rw(operation, types, date = None, BDTE=None, EDTE=None, csv_time=da
 
                 # 将获取到的数据转换为DataFrame
                 df = pd.DataFrame(rows, columns=columns)
+
+                # 检查 "Delta" 是否在结果集中,兼容没有Delta列的数据库
+                if "Delta" not in df.columns:
+                    # 如果不在，添加一个名为 "Delta" 的列，并设置默认值（可以是 NaN）
+                    df["Delta"] = np.nan
+
                 # 显式指定列的数据类型
                 df = df.astype({
                     "Symbol": str,
