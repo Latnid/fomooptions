@@ -251,8 +251,9 @@ def Analysis_premium():
         )
 
 
+
         #Open Int call put in one ticker
-        plot_one_tickerOI = option_change[option_change['Symbol'] == ticker_selected].hvplot.bar(
+        plot_one_tickerOI = sorted_option_change = option_change[option_change['Symbol'] == ticker_selected].sort_values(by='Type').hvplot.bar(
             by='Type',
             #hue=["Call","Put"], 
             color=['#0AA638','#FF5635'],
@@ -270,7 +271,7 @@ def Analysis_premium():
         )
         
         #Open Int call put in one ticker
-        plot_one_tickerOI_change = option_change[option_change['Symbol'] == ticker_selected].hvplot.bar(
+        plot_one_tickerOI_change = option_change[option_change['Symbol'] == ticker_selected].sort_values(by='Type').hvplot.bar(
             x = 'Strike',
             y='OI Chg',
             by='Type',
@@ -294,6 +295,7 @@ def Analysis_premium():
         st.bokeh_chart(hv.render(plot_top20OI_chg, backend="bokeh",))
         st.bokeh_chart(hv.render(plot_one_tickerOI, backend="bokeh",))
         st.bokeh_chart(hv.render(plot_one_tickerOI_change, backend="bokeh"))
+
             
         
     #Shows weblink if error happen.

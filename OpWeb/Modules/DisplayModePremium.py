@@ -176,7 +176,7 @@ def Display_premium():
         # 在同一个页面显示选定的ticker的图表
         for ticker in sorted_tickers:
             # Open Int call put in one ticker
-            plot_one_tickerOI = sorted_option_change[sorted_option_change['Symbol'] == ticker].hvplot.bar(
+            plot_one_tickerOI = sorted_option_change[sorted_option_change['Symbol'] == ticker].sort_values(by='Type').hvplot.bar(
                 by='Type',
                 #hue=["Call", "Put"],
                 color=['#0AA638', '#FF5635'],
@@ -194,7 +194,7 @@ def Display_premium():
             )
 
             # Open Int call put in one ticker
-            plot_one_tickerOI_change = sorted_option_change[sorted_option_change['Symbol'] == ticker].hvplot.bar(
+            plot_one_tickerOI_change = sorted_option_change[sorted_option_change['Symbol'] == ticker].sort_values(by='Type').hvplot.bar(
                 x='Strike',
                 y='OI Chg',
                 by='Type',
