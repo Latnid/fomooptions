@@ -144,7 +144,7 @@ def Display_premium():
 
         # Define the formatter for hover_change tooltip
         hover_change=HoverTool(tooltips=[
-            ('Price','@Price'),
+                ('Price','@Price{ .2f}'),
                 ('Type','@Type'),
                 ('Strike','@Strike'),
                 ('DTE','@DTE'),
