@@ -190,7 +190,7 @@ def New_position_premium():
             )
             # Define the formatter for hover tooltip
             hover=HoverTool(tooltips=[
-                ('Price','@Price'),
+                  ('Price','@Price{ .2f}'),
                   ('Type','@Type'),
                   ('Strike','@Strike'),
                   ('DTE','@DTE'),

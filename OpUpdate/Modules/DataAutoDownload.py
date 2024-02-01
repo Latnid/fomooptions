@@ -119,7 +119,7 @@ def is_trading_hours(current_time):
     if len(trading_dates) == 0:
         return False
 
-    trading_start_time = datetime.strptime('9:30', '%H:%M').time()
+    trading_start_time = datetime.strptime('9:45', '%H:%M').time()
     trading_end_time = datetime.strptime('16:00', '%H:%M').time()
     if (
         trading_start_time <= current_time.time() <= trading_end_time
@@ -141,21 +141,21 @@ if __name__ == '__main__':
                 clean_csv()
                 download_csv()
                 write_data_to_database(directory = os.path.join(os.path.dirname(__file__), "../Data/Increase/"))
-                print("Repeat in one hour.")
-                # 倒计时1小时
+                print("Repeat in 20 minutes.")
+                # 开市时间段，每20分钟触发一次
                 for i in range(20*60, 0, -1):
                     mins, secs = divmod(i, 60)
                     time_format = f"{mins:02d}:{secs:02d}"
                     print(f"Next download in {time_format}...", end="\r")
                     t.sleep(1)
             else:
-                # 倒计时到下一个整点小时
-                next_hour = (current_time + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+                # 闭市时间段，下一分钟再检测
+                next_hour = (current_time + timedelta(minutes=1)).replace(second=0, microsecond=0)
                 time_diff = (next_hour - current_time).total_seconds()
                 for i in range(int(time_diff), 0, -1):
                     mins, secs = divmod(i, 60)
                     time_format = f"{mins:02d}:{secs:02d}"
-                    print(f"Market closed. Next trading time is {next_hour}. Waiting {time_format}...", end="\r")
+                    print(f"Market closed. Next checking time is {next_hour}. Waiting {time_format}...", end="\r")
                     t.sleep(1)
         except Exception as e:
             with open('Datadownload_error.log', 'a') as f:
