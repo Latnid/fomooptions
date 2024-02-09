@@ -196,7 +196,8 @@ def Analysis_premium():
                 ('OI Chg', '@OI_Chg'), #if original column has space, use '_' instead!
                 ('Delta', '@Delta{ .3ff}'),
                 ('IV', '@IV'),
-                ('Time','@Time')
+                ('Time','@Time'),
+                ('Split Line', '-------------')
             ]
         )
         # Define the formatter for hoverOI tooltip
@@ -209,7 +210,8 @@ def Analysis_premium():
                 ('Last','@Last{ .2f}'),
                 ('Volume','@Volume'),
                 ('Open Int', '@Open_Int'),
-                ('Time','@Time')
+                ('Time','@Time'),
+                ('Split Line', '-------------')
             ]
         )
 

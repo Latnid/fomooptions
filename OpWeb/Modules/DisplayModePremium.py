@@ -156,7 +156,8 @@ def Display_premium():
                 ('OI Chg', '@OI_Chg'), #if original column has space, use '_' instead!
                 ('Delta', '@Delta{ .3ff}'),
                 ('IV', '@IV'),
-                ('Time','@Time')
+                ('Time','@Time'),
+                ('Split Line', '-------------')
             ]
         )
         # Define the formatter for hoverOI tooltip
@@ -169,7 +170,8 @@ def Display_premium():
                 ('Last','@Last{ .2f}'),
                 ('Volume','@Open_Int'),
                 ('Open Int', '@Volume'),
-                ('Time','@Time')
+                ('Time','@Time'),
+                ('Split Line', '-------------')
             ]
         )
         
