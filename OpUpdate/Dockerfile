@@ -1,5 +1,5 @@
 # Use the selenium/standalone-firefox image as the base image
-FROM seleniarm/standalone-chromium:latest
+FROM seleniarm/standalone-chromium:114.0.5735.106
 
 # Set the working directory to /app
 WORKDIR /app
@@ -15,7 +15,9 @@ USER root
 
 # Install Python and other dependencies using sudo
 RUN apt-get update
-RUN apt-get install -y python3-pip
+RUN wget https://bootstrap.pypa.io/get-pip.py
+RUN python3 get-pip.py --break-system-packages
+#RUN apt-get install -y python3-pip
 RUN pip3 install -r requirements.txt --break-system-packages
 
 # Set the owner and group of /home/seluser to seluser
