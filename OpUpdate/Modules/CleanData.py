@@ -2,7 +2,7 @@
 import os
 import pandas as pd
 from pathlib import Path
-import pandas as pd
+from datetime import datetime
 pd.options.mode.chained_assignment = None  # default='warn'
 
 # Create the function for clean data acquire.
@@ -26,9 +26,14 @@ def get_data(date,types,DTE):
         # Convert 'Strike' column to float64 in the Decrease DataFrame
         increase[['OI Chg', 'Strike']] = increase[['OI Chg', 'Strike']].replace({',': '', 'unch': '0', r'\*': ''}, regex=True).astype(float)
         decrease[['OI Chg', 'Strike']] = decrease[['OI Chg', 'Strike']].replace({',': '', 'unch': '0', r'\*': ''}, regex=True).astype(float)
-
+        
         #combine increase and decrease data
         combine_df = increase.merge(decrease, how= 'outer')
+
+        #Calculate DTE if there is no DTE in the dataframe
+        if 'DTE' not in combine_df.columns:
+            combine_df['Exp Date'] = pd.to_datetime(combine_df['Exp Date'], format='%Y-%m-%d')
+            combine_df['DTE'] = (combine_df['Exp Date'] - datetime.strptime('05-28-2025', '%m-%d-%Y')).dt.days
         
         #Select the DTE
         if DTE == 'min':
@@ -43,18 +48,33 @@ def get_data(date,types,DTE):
         
         # Transfer columns 'OI Chg' and 'Strike' datatype from str to float.
         combine_min_DTE[['OI Chg', 'Strike']] = combine_min_DTE[['OI Chg', 'Strike']].replace({',': '', 'unch': '0', r'\*': ''}, regex=True).astype(float)
+
         
         #Transfer column 'IV'datatype from str to float.
         combine_min_DTE['IV'] = combine_min_DTE['IV'].str.replace('%', '').str.replace(',', '').astype(float)/100
         
         #Sorted by orders 'Symbol','Type','Strike','Open Int','Volume','OI Chg','IV'.
         combine_sort_df = combine_min_DTE.sort_values(['Symbol','Type','Strike','Open Int','Volume','OI Chg','IV'])
-        
-        # Rename columns
-        combine_sort_df.columns = ['Symbol', 'Price', 'Type', 'Strike', 'Exp Date', 'DTE', 'Bid', 'Ask', 'Last', 'Volume', 'Open Int', 'OI Chg', 'Delta', 'IV', 'Time']
 
-        # Calculate 'Midpoint' and add the column
-        combine_sort_df['Midpoint'] = (combine_sort_df['Ask'] + combine_sort_df['Bid']) / 2
+        # 5）Midpoint & pseudo‑Last utilized OI to micmic Last
+        combine_sort_df['Midpoint'] = (combine_sort_df['Bid'] + combine_sort_df['Ask']) / 2
+        # ---------- 生成 Last（按 OI Chg 强度在 [Bid,Ask] 连续插值，并保留两位小数） ----------
+        max_abs_oi = combine_sort_df['OI Chg'].abs().max() or 1  # 防止除零
+        combine_sort_df['Last'] = combine_sort_df.apply(lambda r: 
+            round(
+                (r['Midpoint'] + (abs(r['OI Chg'])/max_abs_oi)*(r['Ask']-r['Midpoint']))
+                if r['OI Chg'] > 0
+                else (
+                    (r['Midpoint'] - (abs(r['OI Chg'])/max_abs_oi)*(r['Midpoint']-r['Bid']))
+                    if r['OI Chg'] < 0
+                    else r['Midpoint']
+                )
+            , 2)
+        , axis=1)
+        # -------------------------------------------------------------------
+        
+        # Rename Price~ to Price
+        combine_sort_df = combine_sort_df.rename(columns={'Price~':'Price'})
 
         # Reorder columns
         column_order = ['Symbol', 'Price', 'Type', 'Strike', 'Exp Date', 'DTE', 'Bid', 'Midpoint', 'Ask', 'Last', 'Volume', 'Open Int', 'OI Chg', 'Delta', 'IV', 'Time']
