@@ -31,9 +31,16 @@ def get_data(date,types,DTE):
         combine_df = increase.merge(decrease, how= 'outer')
 
         #Calculate DTE if there is no DTE in the dataframe
+        # Only calculate DTE if the column does not already exist
         if 'DTE' not in combine_df.columns:
+            # Convert the expiration date column to datetime objects
             combine_df['Exp Date'] = pd.to_datetime(combine_df['Exp Date'], format='%Y-%m-%d')
-            combine_df['DTE'] = (combine_df['Exp Date'] - datetime.strptime('05-28-2025', '%m-%d-%Y')).dt.days
+
+            # Get today's date (normalized to midnight, to match date granularity)
+            today = pd.Timestamp.today().normalize()  # Or use datetime.today().date()
+
+            # Calculate DTE (Days to Expiration) as the difference in days
+            combine_df['DTE'] = (combine_df['Exp Date'] - today).dt.days
         
         #Select the DTE
         if DTE == 'min':
