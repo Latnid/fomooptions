@@ -76,7 +76,7 @@ def database_rw(operation, date, types, BDTE=None, EDTE=None, csv_time=datetime.
                 "Price" NUMERIC,
                 "Type" TEXT,
                 "Strike" NUMERIC,
-                "Exp Date" TEXT,
+                "Exp Date" DATE,
                 "DTE" NUMERIC,
                 "Bid" NUMERIC,
                 "Midpoint" NUMERIC,
