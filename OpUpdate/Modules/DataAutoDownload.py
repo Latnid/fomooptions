@@ -51,7 +51,38 @@ def download_csv():
         # 打开目标网页并查找“download”按钮
         driver.get(url)
         t.sleep(5)
-        download_btn = driver.find_element(By.CSS_SELECTOR, 'a.toolbar-button.download.ng-isolate-scope')
+        # 尝试多个可能的下载按钮选择器
+        download_selectors = [
+            'a.toolbar-button.download.ng-isolate-scope',  # 原始选择器
+            'a.toolbar-button.download',
+            'a[title*="Download"]',
+            'button[title*="Download"]',
+            'a[href*="download"]',
+            '.download-button',
+            '[data-ng-click*="download"]',
+            "//a[contains(text(), 'Download')]",
+            "//button[contains(text(), 'Download')]",
+            "//a[contains(@title, 'Download')]",
+        ]
+
+        download_btn = None
+        for selector in download_selectors:
+            try:
+                if selector.startswith('//'):
+                    download_btn = driver.find_element(By.XPATH, selector)
+                else:
+                    download_btn = driver.find_element(By.CSS_SELECTOR, selector)
+
+                if download_btn.is_displayed() and download_btn.is_enabled():
+                    break
+                else:
+                    download_btn = None
+            except:
+                continue
+
+        if download_btn is None:
+            raise Exception(f"Download button not found on {url}")
+
         download_btn.click()
 
 
