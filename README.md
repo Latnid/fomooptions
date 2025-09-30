@@ -9,6 +9,30 @@
 
 ---
 
+## 📸 Screenshots
+
+### Main Dashboard - Options Flow Analysis
+![Options Flow Dashboard](Others/image-15.png)
+*Real-time visualization of open interest changes across stocks and ETFs*
+
+### Historical Trend Analysis
+![Historical Trends](Others/image-18.png)
+*Time-series tracking of options flow patterns*
+
+### Data Table View
+![Data Table](Others/image-19.png)
+*Detailed options data with filtering and sorting capabilities*
+
+### Flow Trend Visualization
+![Flow Trends](Others/image-21.png)
+*Interactive charts showing market sentiment and unusual activity*
+
+### Advanced Analytics
+![Advanced Analytics](Others/image-62.png)
+*Premium tier features with multi-dimensional analysis*
+
+---
+
 ## 📊 Project Overview
 
 FOMO Options is an end-to-end automated data platform that collects, processes, and visualizes options flow data to help traders identify unusual market activity and sentiment shifts.
