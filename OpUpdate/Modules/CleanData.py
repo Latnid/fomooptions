@@ -1,91 +1,148 @@
-# Import required libraries
-import os
-import pandas as pd
 from pathlib import Path
-from datetime import datetime
-pd.options.mode.chained_assignment = None  # default='warn'
 
-# Create the function for clean data acquire.
-def get_data(date,types,DTE):
-        """
-         DTE is String type, 
-         DTE can be 'min' or number of the DTE.(1,2,3,4......)
-         types is String type, 
-         types has two types, 'stocks' or 'etfs'
-         date type is String , 
-         date format is MM-DD-YYYY , for example '09-13-2022'
-        """
-        # acquire system path of the current file, join it with the related path of the csv file path.
-        increase_path = os.path.join(os.path.dirname(__file__), f'../Data/Increase/{types}-increase-change-in-open-interest-{date}.csv')
-        decrease_path = os.path.join(os.path.dirname(__file__), f'../Data/Decrease/{types}-decrease-change-in-open-interest-{date}.csv')
-        
-        #read csv files
-        increase = pd.read_csv(Path(increase_path))
-        decrease = pd.read_csv(Path(decrease_path))
+import pandas as pd
 
-        # Convert 'Strike' column to float64 in the Decrease DataFrame
-        increase[['OI Chg', 'Strike']] = increase[['OI Chg', 'Strike']].replace({',': '', 'unch': '0', r'\*': ''}, regex=True).astype(float)
-        decrease[['OI Chg', 'Strike']] = decrease[['OI Chg', 'Strike']].replace({',': '', 'unch': '0', r'\*': ''}, regex=True).astype(float)
-        
-        #combine increase and decrease data
-        combine_df = increase.merge(decrease, how= 'outer')
+pd.options.mode.chained_assignment = None
 
-        #Calculate DTE if there is no DTE in the dataframe
-        # Only calculate DTE if the column does not already exist
-        if 'DTE' not in combine_df.columns:
-            # Convert the expiration date column to datetime objects
-            combine_df['Exp Date'] = pd.to_datetime(combine_df['Exp Date'], format='%Y-%m-%d')
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-            # Get today's date (normalized to midnight, to match date granularity)
-            today = pd.Timestamp.today().normalize()  # Or use datetime.today().date()
 
-            # Calculate DTE (Days to Expiration) as the difference in days
-            combine_df['DTE'] = (combine_df['Exp Date'] - today).dt.days
-        
-        #Select the DTE
-        if DTE == 'min':
-            combine_min_DTE = combine_df[combine_df['DTE'] == combine_df['DTE'].min()]
-        elif DTE == 'max':
-            combine_min_DTE = combine_df[combine_df['DTE'] <= combine_df['DTE'].max()]
-        else:
-            combine_min_DTE = combine_df[combine_df['DTE'] <= DTE]
+def _csv_path(date, types, direction):
+    return BASE_DIR / "Data" / direction.capitalize() / (
+        f"{types}-{direction}-change-in-open-interest-{date}.csv"
+    )
 
-        #Clean the NA data
-        combine_min_DTE = combine_min_DTE.dropna()
-        
-        # Transfer columns 'OI Chg' and 'Strike' datatype from str to float.
-        combine_min_DTE[['OI Chg', 'Strike']] = combine_min_DTE[['OI Chg', 'Strike']].replace({',': '', 'unch': '0', r'\*': ''}, regex=True).astype(float)
 
-        
-        #Transfer column 'IV'datatype from str to float.
-        combine_min_DTE['IV'] = combine_min_DTE['IV'].str.replace('%', '').str.replace(',', '').astype(float)/100
-        
-        #Sorted by orders 'Symbol','Type','Strike','Open Int','Volume','OI Chg','IV'.
-        combine_sort_df = combine_min_DTE.sort_values(['Symbol','Type','Strike','Open Int','Volume','OI Chg','IV'])
+def _clean_numeric(series, percent=False):
+    text = (
+        series.astype("string")
+        .str.replace(",", "", regex=False)
+        .str.replace("+", "", regex=False)
+        .str.replace("*", "", regex=False)
+        .str.replace("%", "", regex=False)
+        .str.strip()
+        .str.replace(r"(?i)^unch$", "0", regex=True)
+    )
+    values = pd.to_numeric(text, errors="coerce")
+    if percent:
+        return values / 100
+    return values
 
-        # 5）Midpoint & pseudo‑Last utilized OI to micmic Last
-        combine_sort_df['Midpoint'] = (combine_sort_df['Bid'] + combine_sort_df['Ask']) / 2
-        # ---------- 生成 Last（按 OI Chg 强度在 [Bid,Ask] 连续插值，并保留两位小数） ----------
-        max_abs_oi = combine_sort_df['OI Chg'].abs().max() or 1  # 防止除零
-        combine_sort_df['Last'] = combine_sort_df.apply(lambda r: 
-            round(
-                (r['Midpoint'] + (abs(r['OI Chg'])/max_abs_oi)*(r['Ask']-r['Midpoint']))
-                if r['OI Chg'] > 0
-                else (
-                    (r['Midpoint'] - (abs(r['OI Chg'])/max_abs_oi)*(r['Midpoint']-r['Bid']))
-                    if r['OI Chg'] < 0
-                    else r['Midpoint']
-                )
-            , 2)
-        , axis=1)
-        # -------------------------------------------------------------------
-        
-        # Rename Price~ to Price
-        combine_sort_df = combine_sort_df.rename(columns={'Price~':'Price'})
 
-        # Reorder columns
-        column_order = ['Symbol', 'Price', 'Type', 'Strike', 'Exp Date', 'DTE', 'Bid', 'Midpoint', 'Ask', 'Last', 'Volume', 'Open Int', 'OI Chg', 'Delta', 'IV', 'Time']
-        combine_sort_df = combine_sort_df[column_order]
-        
-        # return data
-        return combine_sort_df
+def _clean_iv(series):
+    text = series.astype("string")
+    values = _clean_numeric(series)
+    if text.str.contains("%", na=False).any() or values.dropna().gt(1).any():
+        values = values / 100
+    return values
+
+
+def _normalize_frame(df):
+    df = df.copy()
+    df = df.rename(columns={"Price~": "Price"})
+
+    for column in ["Price", "Strike", "Bid", "Ask", "Volume", "Open Int", "OI Chg", "Delta", "DTE"]:
+        if column in df.columns:
+            df[column] = _clean_numeric(df[column])
+
+    if "IV" in df.columns:
+        df["IV"] = _clean_iv(df["IV"])
+
+    if "Exp Date" in df.columns:
+        df["Exp Date"] = pd.to_datetime(df["Exp Date"], errors="coerce")
+
+    if "DTE" not in df.columns:
+        df["DTE"] = pd.NA
+
+    missing_dte = df["DTE"].isna()
+    if missing_dte.any() and "Exp Date" in df.columns:
+        today = pd.Timestamp.today().normalize()
+        df.loc[missing_dte, "DTE"] = (df.loc[missing_dte, "Exp Date"] - today).dt.days
+
+    return df
+
+
+def get_data(date, types, DTE):
+    """
+    Return cleaned option open-interest-change rows for a date.
+
+    DTE can be 'min', 'max', or a numeric upper bound.
+    types can be 'stocks' or 'etfs'.
+    date format is MM-DD-YYYY, for example '09-13-2022'.
+    """
+    increase_path = _csv_path(date, types, "increase")
+    decrease_path = _csv_path(date, types, "decrease")
+
+    increase = _normalize_frame(pd.read_csv(increase_path))
+    decrease = _normalize_frame(pd.read_csv(decrease_path))
+
+    combine_df = pd.concat([increase, decrease], ignore_index=True, sort=False)
+
+    required_columns = [
+        "Symbol",
+        "Price",
+        "Type",
+        "Strike",
+        "Exp Date",
+        "DTE",
+        "Bid",
+        "Ask",
+        "Volume",
+        "Open Int",
+        "OI Chg",
+        "Delta",
+        "IV",
+        "Time",
+    ]
+    missing_columns = [column for column in required_columns if column not in combine_df.columns]
+    if missing_columns:
+        raise KeyError(f"Missing required columns in Barchart CSV: {missing_columns}")
+
+    combine_df = combine_df.dropna(subset=required_columns)
+
+    if DTE == "min":
+        selected = combine_df[combine_df["DTE"] == combine_df["DTE"].min()]
+    elif DTE == "max":
+        selected = combine_df[combine_df["DTE"] <= combine_df["DTE"].max()]
+    else:
+        selected = combine_df[combine_df["DTE"] <= float(DTE)]
+
+    selected = selected.copy()
+    selected["Midpoint"] = (selected["Bid"] + selected["Ask"]) / 2
+
+    max_abs_oi = selected["OI Chg"].abs().max()
+    if pd.isna(max_abs_oi) or max_abs_oi == 0:
+        max_abs_oi = 1
+
+    def pseudo_last(row):
+        strength = abs(row["OI Chg"]) / max_abs_oi
+        if row["OI Chg"] > 0:
+            return row["Midpoint"] + strength * (row["Ask"] - row["Midpoint"])
+        if row["OI Chg"] < 0:
+            return row["Midpoint"] - strength * (row["Midpoint"] - row["Bid"])
+        return row["Midpoint"]
+
+    selected["Last"] = selected.apply(lambda row: round(pseudo_last(row), 2), axis=1)
+
+    sort_columns = ["Symbol", "Type", "Strike", "Open Int", "Volume", "OI Chg", "IV"]
+    selected = selected.sort_values(sort_columns)
+
+    column_order = [
+        "Symbol",
+        "Price",
+        "Type",
+        "Strike",
+        "Exp Date",
+        "DTE",
+        "Bid",
+        "Midpoint",
+        "Ask",
+        "Last",
+        "Volume",
+        "Open Int",
+        "OI Chg",
+        "Delta",
+        "IV",
+        "Time",
+    ]
+    return selected[column_order]
