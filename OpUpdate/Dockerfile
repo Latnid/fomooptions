@@ -1,32 +1,19 @@
-# Use the selenium/standalone-firefox image as the base image
-FROM seleniarm/standalone-chromium:114.0.5735.106
+FROM selenium/standalone-chromium:latest
 
-# Set the working directory to /app
-WORKDIR /app
-
-# Copy the files from the current directory into the container's /app directory
-COPY . .
-
-# Expose ports 4444, 5900, and 7900
-EXPOSE 4444 5900 7900
-
-# Install sudo for root access during package installation
 USER root
 
-# Install Python and other dependencies using sudo
-RUN apt-get update
-RUN wget https://bootstrap.pypa.io/get-pip.py
-RUN python3 get-pip.py --break-system-packages
-#RUN apt-get install -y python3-pip
-RUN pip3 install -r requirements.txt --break-system-packages
+ENV PYTHONUNBUFFERED=1 \
+    OPTIONSUPDATE_APP_DIR=/app \
+    OPTIONSUPDATE_LOG_DIR=/app/Modules \
+    SEL_DOWNLOAD_DIR=/home/seluser/Downloads
 
-# Set the owner and group of /home/seluser to seluser
+COPY requirements.txt /tmp/optionsupdate-requirements.txt
+RUN python3 -m pip install --no-cache-dir -r /tmp/optionsupdate-requirements.txt
 
-RUN mkdir -p /home/seluser/Downloads
-RUN chown -R seluser:root /home/seluser
-RUN chown -R seluser:root /app/
-COPY ./Sysetting/selenium.conf /etc/supervisor/conf.d 
+COPY docker/data-download.conf /etc/supervisor/conf.d/data-download.conf
+COPY . /app
 
-# Start the Python script when the container runs
+RUN mkdir -p /home/seluser/Downloads /app/Modules/debug /app/Data/Increase /app/Data/Decrease \
+    && chown -R seluser:root /app /home/seluser/Downloads
+
 USER seluser
-
