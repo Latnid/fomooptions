@@ -1,0 +1,7 @@
+Data/
+Modules/*.log
+Modules/*_error_log.txt
+Modules/oldlog/
+Modules/__pycache__/
+Modules/debug/
+*.pyc
