@@ -10,7 +10,7 @@ import pandas_market_calendars as mcal
 import pytz
 from dotenv import load_dotenv
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -60,6 +60,24 @@ DOWNLOAD_SELECTORS = [
     "a[href*='download']",
     ".download-button",
     "[data-ng-click*='download']",
+]
+
+BLOCKING_OVERLAY_SELECTORS = [
+    ".reveal-modal-bg",
+    "[modal-backdrop]",
+    ".modal-backdrop",
+    ".modal.show",
+    ".reveal-modal.open",
+    ".reveal-modal[style*='display: block']",
+]
+
+MODAL_CLOSE_SELECTORS = [
+    "button[aria-label='Close']",
+    "[aria-label='Close']",
+    "button.close",
+    ".close-reveal-modal",
+    ".reveal-modal .close",
+    ".modal .close",
 ]
 
 CSV_PATTERN = re.compile(
@@ -220,6 +238,93 @@ def maybe_click_download_anyway(driver):
     return False
 
 
+def has_visible_blocking_overlay(driver):
+    for selector in BLOCKING_OVERLAY_SELECTORS:
+        try:
+            if any(element.is_displayed() for element in driver.find_elements(By.CSS_SELECTOR, selector)):
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def close_blocking_overlays(driver):
+    closed_any = False
+    for _ in range(3):
+        if not has_visible_blocking_overlay(driver):
+            return closed_any
+
+        if maybe_click_download_anyway(driver):
+            return True
+
+        for selector in MODAL_CLOSE_SELECTORS:
+            try:
+                for element in driver.find_elements(By.CSS_SELECTOR, selector):
+                    if element.is_displayed() and element.is_enabled():
+                        element.click()
+                        t.sleep(1)
+                        closed_any = True
+                        break
+                if closed_any and not has_visible_blocking_overlay(driver):
+                    return True
+            except Exception:
+                continue
+
+        try:
+            driver.switch_to.active_element.send_keys("\ue00c")  # Escape
+            t.sleep(1)
+            closed_any = True
+        except Exception:
+            pass
+
+        if not has_visible_blocking_overlay(driver):
+            return closed_any
+
+        for selector in [".reveal-modal-bg", "[modal-backdrop]", ".modal-backdrop"]:
+            try:
+                for element in driver.find_elements(By.CSS_SELECTOR, selector):
+                    if element.is_displayed():
+                        element.click()
+                        t.sleep(1)
+                        closed_any = True
+                        break
+            except Exception:
+                continue
+
+    return closed_any
+
+
+def click_download_button(driver, button, target_kind):
+    close_blocking_overlays(driver)
+    driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", button)
+    t.sleep(1)
+
+    last_error = None
+    for attempt in range(1, 4):
+        try:
+            button.click()
+            return
+        except ElementClickInterceptedException as exc:
+            last_error = exc
+            save_debug_artifacts(driver, f"download_click_intercepted_{target_kind}_attempt_{attempt}")
+
+            if maybe_click_download_anyway(driver):
+                return
+
+            if close_blocking_overlays(driver):
+                t.sleep(1)
+                continue
+
+            try:
+                driver.execute_script("arguments[0].click();", button)
+                return
+            except Exception as js_exc:
+                last_error = js_exc
+                t.sleep(1)
+
+    raise last_error
+
+
 def download_csv():
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
     INCREASE_DIR.mkdir(parents=True, exist_ok=True)
@@ -248,7 +353,7 @@ def download_csv():
 
             before_files = set(DOWNLOAD_DIR.glob("*"))
             started_at = t.time()
-            button.click()
+            click_download_button(driver, button, target["kind"])
             t.sleep(3)
             if maybe_click_download_anyway(driver):
                 t.sleep(3)
